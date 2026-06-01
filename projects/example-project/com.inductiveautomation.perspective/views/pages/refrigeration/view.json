@@ -90,7 +90,7 @@
                       "style": {
                         "color": "#111111",
                         "fontSize": "11px",
-                        "fontWeight": 700,
+                        "fontWeight": 600,
                         "letterSpacing": "1.6px",
                         "textTransform": "uppercase"
                       },
