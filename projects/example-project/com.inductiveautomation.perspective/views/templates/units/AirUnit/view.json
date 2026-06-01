@@ -1,0 +1,439 @@
+{
+  "custom": {},
+  "params": {
+    "displayName": "",
+    "tagPath": ""
+  },
+  "propConfig": {
+    "params.displayName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.tagPath": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 72,
+      "width": 320
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Name"
+            },
+            "position": {
+              "basis": "58px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.displayName"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "alignSelf": "center",
+                "color": "#111111",
+                "fontSize": "13px",
+                "fontWeight": 700,
+                "letterSpacing": "1px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Id"
+                    },
+                    "position": {
+                      "basis": "44px"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "#5f5f5c",
+                        "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                        "fontSize": "10px",
+                        "fontWeight": 600,
+                        "letterSpacing": "1px"
+                      },
+                      "text": "FAN 1"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Dot"
+                    },
+                    "position": {
+                      "basis": "12px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.fill.paint": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(tag({view.params.tagPath} + \u0027/Fan 1 HOA\u0027) \u003d 2, \u0027#1f7a7a\u0027, if(tag({view.params.tagPath} + \u0027/Fan 1 HOA\u0027) \u003d 1, \u0027#d49a1f\u0027, if(tag({view.params.tagPath} + \u0027/Fan 1 HOA\u0027) \u003d 0, \u0027#4a4a47\u0027, \u0027#cccccc\u0027)))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "fill": {},
+                      "stroke": {
+                        "paint": "#111111",
+                        "width": 0.5
+                      }
+                    },
+                    "type": "ia.shapes.ellipse"
+                  },
+                  {
+                    "meta": {
+                      "name": "HOA"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.controlValue": {
+                        "binding": {
+                          "config": {
+                            "expression": "tag({view.params.tagPath} + \u0027/Fan 1 HOA\u0027)"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.indicatorValue": {
+                        "binding": {
+                          "config": {
+                            "expression": "tag({view.params.tagPath} + \u0027/Fan 1 HOA\u0027)"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "orientation": "row",
+                      "states": [
+                        {
+                          "selectedStyle": {
+                            "backgroundColor": "#4a4a47",
+                            "border": "0",
+                            "borderRadius": "0",
+                            "classes": "",
+                            "color": "#ffffff",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "fontWeight": 700,
+                            "letterSpacing": "1px"
+                          },
+                          "text": "OFF",
+                          "unselectedStyle": {
+                            "backgroundColor": "#a3a3a0",
+                            "border": "1px solid #6e6e6c",
+                            "borderRadius": "0",
+                            "classes": "",
+                            "color": "#5f5f5c",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "letterSpacing": "1px"
+                          },
+                          "value": 0
+                        },
+                        {
+                          "selectedStyle": {
+                            "backgroundColor": "#d49a1f",
+                            "border": "0",
+                            "borderRadius": "0",
+                            "color": "#1a1a18",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "fontWeight": 700,
+                            "letterSpacing": "1px"
+                          },
+                          "text": "HAND",
+                          "unselectedStyle": {
+                            "backgroundColor": "#a3a3a0",
+                            "border": "1px solid #6e6e6c",
+                            "borderRadius": "0",
+                            "color": "#5f5f5c",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "letterSpacing": "1px"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "selectedStyle": {
+                            "backgroundColor": "#1f7a7a",
+                            "border": "0",
+                            "borderRadius": "0",
+                            "color": "#ffffff",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "fontWeight": 700,
+                            "letterSpacing": "1px"
+                          },
+                          "text": "AUTO",
+                          "unselectedStyle": {
+                            "backgroundColor": "#a3a3a0",
+                            "border": "1px solid #6e6e6c",
+                            "borderRadius": "0",
+                            "color": "#5f5f5c",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "letterSpacing": "1px"
+                          },
+                          "value": 2
+                        }
+                      ]
+                    },
+                    "type": "ia.input.multi-state-button"
+                  }
+                ],
+                "meta": {
+                  "name": "F1"
+                },
+                "position": {
+                  "basis": "24px"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Id"
+                    },
+                    "position": {
+                      "basis": "44px"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "#5f5f5c",
+                        "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                        "fontSize": "10px",
+                        "fontWeight": 600,
+                        "letterSpacing": "1px"
+                      },
+                      "text": "FAN 2"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Dot"
+                    },
+                    "position": {
+                      "basis": "12px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.fill.paint": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(tag({view.params.tagPath} + \u0027/Fan 2 HOA\u0027) \u003d 2, \u0027#1f7a7a\u0027, if(tag({view.params.tagPath} + \u0027/Fan 2 HOA\u0027) \u003d 1, \u0027#d49a1f\u0027, if(tag({view.params.tagPath} + \u0027/Fan 2 HOA\u0027) \u003d 0, \u0027#4a4a47\u0027, \u0027#cccccc\u0027)))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "fill": {},
+                      "stroke": {
+                        "paint": "#111111",
+                        "width": 0.5
+                      }
+                    },
+                    "type": "ia.shapes.ellipse"
+                  },
+                  {
+                    "meta": {
+                      "name": "HOA"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.controlValue": {
+                        "binding": {
+                          "config": {
+                            "expression": "tag({view.params.tagPath} + \u0027/Fan 2 HOA\u0027)"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.indicatorValue": {
+                        "binding": {
+                          "config": {
+                            "expression": "tag({view.params.tagPath} + \u0027/Fan 2 HOA\u0027)"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "orientation": "row",
+                      "states": [
+                        {
+                          "selectedStyle": {
+                            "backgroundColor": "#4a4a47",
+                            "border": "0",
+                            "borderRadius": "0",
+                            "classes": "",
+                            "color": "#ffffff",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "fontWeight": 700,
+                            "letterSpacing": "1px"
+                          },
+                          "text": "OFF",
+                          "unselectedStyle": {
+                            "backgroundColor": "#a3a3a0",
+                            "border": "1px solid #6e6e6c",
+                            "borderRadius": "0",
+                            "classes": "",
+                            "color": "#5f5f5c",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "letterSpacing": "1px"
+                          },
+                          "value": 0
+                        },
+                        {
+                          "selectedStyle": {
+                            "backgroundColor": "#d49a1f",
+                            "border": "0",
+                            "borderRadius": "0",
+                            "color": "#1a1a18",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "fontWeight": 700,
+                            "letterSpacing": "1px"
+                          },
+                          "text": "HAND",
+                          "unselectedStyle": {
+                            "backgroundColor": "#a3a3a0",
+                            "border": "1px solid #6e6e6c",
+                            "borderRadius": "0",
+                            "color": "#5f5f5c",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "letterSpacing": "1px"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "selectedStyle": {
+                            "backgroundColor": "#1f7a7a",
+                            "border": "0",
+                            "borderRadius": "0",
+                            "color": "#ffffff",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "fontWeight": 700,
+                            "letterSpacing": "1px"
+                          },
+                          "text": "AUTO",
+                          "unselectedStyle": {
+                            "backgroundColor": "#a3a3a0",
+                            "border": "1px solid #6e6e6c",
+                            "borderRadius": "0",
+                            "color": "#5f5f5c",
+                            "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                            "fontSize": "10px",
+                            "letterSpacing": "1px"
+                          },
+                          "value": 2
+                        }
+                      ]
+                    },
+                    "type": "ia.input.multi-state-button"
+                  }
+                ],
+                "meta": {
+                  "name": "F2"
+                },
+                "position": {
+                  "basis": "24px"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Fans"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Row"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "backgroundColor": "#c9c9c6",
+            "gap": "10px",
+            "padding": "10px 14px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#c9c9c6",
+        "gap": "0px",
+        "overflow": "hidden",
+        "padding": "0"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

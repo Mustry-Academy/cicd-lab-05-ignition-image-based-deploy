@@ -1,0 +1,417 @@
+{
+  "custom": {
+    "data": {}
+  },
+  "params": {
+    "displayName": "",
+    "tagPath": ""
+  },
+  "propConfig": {
+    "custom.data": {
+      "persistent": true
+    },
+    "custom.data.hum": {
+      "binding": {
+        "config": {
+          "fallbackDelay": 2.5,
+          "mode": "indirect",
+          "references": {
+            "tagPath": "{view.params.tagPath}"
+          },
+          "tagPath": "{tagPath}/Humidity"
+        },
+        "type": "tag"
+      }
+    },
+    "custom.data.temp": {
+      "binding": {
+        "config": {
+          "fallbackDelay": 2.5,
+          "mode": "indirect",
+          "references": {
+            "tagPath": "{view.params.tagPath}"
+          },
+          "tagPath": "{tagPath}/Temperature"
+        },
+        "type": "tag"
+      }
+    },
+    "params.displayName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.tagPath": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 150,
+      "width": 200
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Id"
+            },
+            "position": {
+              "basis": "16px"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.displayName"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "#111111",
+                "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                "fontSize": "11px",
+                "fontWeight": 700,
+                "letterSpacing": "1px",
+                "textTransform": "uppercase"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "position": {
+                  "basis": "14px"
+                },
+                "props": {
+                  "style": {
+                    "color": "#5f5f5c",
+                    "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                    "fontSize": "10px",
+                    "letterSpacing": "1px",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "TEMP"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "V"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.style.color": {
+                        "binding": {
+                          "config": {
+                            "expression": "if((tag({view.params.tagPath} + \u0027/Temperature\u0027)) \u003e\u003d 88, \u0027#c8362a\u0027, if((tag({view.params.tagPath} + \u0027/Temperature\u0027)) \u003e\u003d 82, \u0027#d49a1f\u0027, \u0027#111111\u0027))"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.data.temp"
+                          },
+                          "transforms": [
+                            {
+                              "formatType": "numeric",
+                              "formatValue": "##.##",
+                              "type": "format"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                        "fontSize": "16px",
+                        "fontWeight": 700
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "U"
+                    },
+                    "props": {
+                      "style": {
+                        "alignSelf": "flex-end",
+                        "color": "#5f5f5c",
+                        "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                        "fontSize": "10px",
+                        "marginLeft": "3px"
+                      },
+                      "text": "°C"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Vu"
+                },
+                "position": {
+                  "basis": "22px"
+                },
+                "props": {
+                  "alignItems": "baseline"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Bar"
+                },
+                "position": {
+                  "basis": "4px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.bar.color": {
+                    "binding": {
+                      "config": {
+                        "expression": "if((tag({view.params.tagPath} + \u0027/Temperature\u0027)) \u003e\u003d 88, \u0027#c8362a\u0027, if((tag({view.params.tagPath} + \u0027/Temperature\u0027)) \u003e\u003d 82, \u0027#d49a1f\u0027, \u0027#2c2c2a\u0027))"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.data.temp"
+                      },
+                      "transforms": [
+                        {
+                          "formatType": "numeric",
+                          "formatValue": "##.##",
+                          "type": "format"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "bar": {},
+                  "style": {
+                    "borderRadius": "0",
+                    "height": "4px"
+                  }
+                },
+                "type": "ia.display.progress"
+              }
+            ],
+            "meta": {
+              "name": "Temp"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "3px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "position": {
+                  "basis": "14px"
+                },
+                "props": {
+                  "style": {
+                    "color": "#5f5f5c",
+                    "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                    "fontSize": "10px",
+                    "letterSpacing": "1px",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "HUMIDITY"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "V"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.style.color": {
+                        "binding": {
+                          "config": {
+                            "expression": "if((tag({view.params.tagPath} + \u0027/Humidity\u0027)) \u003e\u003d 85, \u0027#c8362a\u0027, if((tag({view.params.tagPath} + \u0027/Humidity\u0027)) \u003e\u003d 70, \u0027#d49a1f\u0027, \u0027#111111\u0027))"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.data.hum"
+                          },
+                          "transforms": [
+                            {
+                              "formatType": "numeric",
+                              "formatValue": "##.##",
+                              "type": "format"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                        "fontSize": "16px",
+                        "fontWeight": 700
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "U"
+                    },
+                    "props": {
+                      "style": {
+                        "alignSelf": "flex-end",
+                        "color": "#5f5f5c",
+                        "fontFamily": "\u0027IBM Plex Mono\u0027, monospace",
+                        "fontSize": "10px",
+                        "marginLeft": "3px"
+                      },
+                      "text": "%RH"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Vu"
+                },
+                "position": {
+                  "basis": "22px"
+                },
+                "props": {
+                  "alignItems": "baseline"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Bar"
+                },
+                "position": {
+                  "basis": "4px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.bar.color": {
+                    "binding": {
+                      "config": {
+                        "expression": "if((tag({view.params.tagPath} + \u0027/Humidity\u0027)) \u003e\u003d 85, \u0027#c8362a\u0027, if((tag({view.params.tagPath} + \u0027/Humidity\u0027)) \u003e\u003d 70, \u0027#d49a1f\u0027, \u0027#2c2c2a\u0027))"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.data.hum"
+                      },
+                      "transforms": [
+                        {
+                          "formatType": "numeric",
+                          "formatValue": "##.##",
+                          "type": "format"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "bar": {},
+                  "style": {
+                    "borderRadius": "0",
+                    "height": "4px"
+                  }
+                },
+                "type": "ia.display.progress"
+              }
+            ],
+            "meta": {
+              "name": "Hum"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "3px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Card"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "backgroundColor": "#c9c9c6",
+            "gap": "8px",
+            "padding": "10px 12px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#c9c9c6",
+        "gap": "0px",
+        "overflow": "hidden",
+        "padding": "0"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

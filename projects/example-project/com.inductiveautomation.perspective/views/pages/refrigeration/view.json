@@ -1,0 +1,1377 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": {
+      "height": 920,
+      "width": 1440
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "CmpRep"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "row",
+                  "elementPosition": {
+                    "basis": "0",
+                    "grow": 1,
+                    "shrink": 1
+                  },
+                  "instances": [
+                    {
+                      "displayName": "CMP-01",
+                      "instancePosition": {
+                        "basis": "0",
+                        "grow": 1,
+                        "shrink": 1
+                      },
+                      "instanceStyle": {},
+                      "tagPath": "[]Refrigeration/Compressor1"
+                    },
+                    {
+                      "displayName": "CMP-02",
+                      "instancePosition": {
+                        "basis": "0",
+                        "grow": 1,
+                        "shrink": 1
+                      },
+                      "instanceStyle": {},
+                      "tagPath": "[]Refrigeration/Compressor2"
+                    }
+                  ],
+                  "path": "templates/units/Compressor",
+                  "style": {
+                    "gap": "12px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": {
+              "name": "CompRow"
+            },
+            "position": {
+              "basis": "430px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "0"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Title"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "#111111",
+                        "fontSize": "11px",
+                        "fontWeight": 600,
+                        "letterSpacing": "1.6px",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "System Header"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Tag"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "#5f5f5c",
+                        "fontFamily": "'IBM Plex Mono', monospace",
+                        "fontSize": "10px",
+                        "fontWeight": 500,
+                        "letterSpacing": "1px"
+                      },
+                      "text": "SYS.REFR"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Header"
+                },
+                "position": {
+                  "basis": "26px",
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "direction": "row",
+                  "style": {
+                    "backgroundColor": "#a3a3a0",
+                    "borderBottom": "1px solid #6e6e6c",
+                    "gap": "8px",
+                    "padding": "0 10px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "AMBIENT TEMP"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/ambientTemp'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "\u00b0F"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/ambientTemp')) > 110, 100, if((tag('[]Refrigeration/ambientTemp')) < 0, 0, (tag('[]Refrigeration/ambientTemp')) / 110 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Amb"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "AMBIENT HUMIDITY"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/ambientHum'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "%RH"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/ambientHum')) > 100, 100, if((tag('[]Refrigeration/ambientHum')) < 0, 0, (tag('[]Refrigeration/ambientHum')) / 100 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "AmbH"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "HDR DISCHARGE"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.style.color": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "if((tag('[]Refrigeration/dischargePressure')) >= 240, '#c8362a', if((tag('[]Refrigeration/dischargePressure')) >= 215, '#d49a1f', '#111111'))"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  },
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/dischargePressure'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "PSIG"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.color": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/dischargePressure')) >= 240, '#c8362a', if((tag('[]Refrigeration/dischargePressure')) >= 215, '#d49a1f', '#2c2c2a'))"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/dischargePressure')) > 300, 100, if((tag('[]Refrigeration/dischargePressure')) < 0, 0, (tag('[]Refrigeration/dischargePressure')) / 300 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Disc"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "HDR DISCHARGE T"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/dischargeTemp'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "\u00b0F"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/dischargeTemp')) > 200, 100, if((tag('[]Refrigeration/dischargeTemp')) < 0, 0, (tag('[]Refrigeration/dischargeTemp')) / 200 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "DT"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "RECEIVER LEVEL"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.style.color": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "if((tag('[]Refrigeration/receiverLevel')) <= 15, '#c8362a', if((tag('[]Refrigeration/receiverLevel')) <= 25, '#d49a1f', '#111111'))"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  },
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/receiverLevel'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "%"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.color": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/receiverLevel')) <= 15, '#c8362a', if((tag('[]Refrigeration/receiverLevel')) <= 25, '#d49a1f', '#2c2c2a'))"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/receiverLevel')) > 100, 100, if((tag('[]Refrigeration/receiverLevel')) < 0, 0, (tag('[]Refrigeration/receiverLevel')) / 100 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Rcv"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "ACCUMULATOR LVL"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/accumulatorLevel'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "%"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/accumulatorLevel')) > 100, 100, if((tag('[]Refrigeration/accumulatorLevel')) < 0, 0, (tag('[]Refrigeration/accumulatorLevel')) / 100 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Acc"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "KING VALVE"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/valveKing'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "%"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/valveKing')) > 100, 100, if((tag('[]Refrigeration/valveKing')) < 0, 0, (tag('[]Refrigeration/valveKing')) / 100 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Kv"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "14px"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "#5f5f5c",
+                                "fontFamily": "'IBM Plex Mono', monospace",
+                                "fontSize": "9px",
+                                "letterSpacing": "1px",
+                                "textTransform": "uppercase"
+                              },
+                              "text": "DISCH VALVE"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "V"
+                                },
+                                "position": {
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "numberFormat(tag('[]Refrigeration/valveDischarge'), '0.0')"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "#111111",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "20px",
+                                    "fontWeight": 600,
+                                    "lineHeight": "1.0"
+                                  },
+                                  "text": "--"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "U"
+                                },
+                                "position": {
+                                  "basis": "auto"
+                                },
+                                "props": {
+                                  "style": {
+                                    "alignSelf": "flex-end",
+                                    "color": "#5f5f5c",
+                                    "fontFamily": "'IBM Plex Mono', monospace",
+                                    "fontSize": "10px",
+                                    "marginLeft": "4px"
+                                  },
+                                  "text": "%"
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Vu"
+                            },
+                            "position": {
+                              "basis": "26px"
+                            },
+                            "props": {
+                              "alignItems": "baseline",
+                              "direction": "row",
+                              "style": {}
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "meta": {
+                              "name": "Bar"
+                            },
+                            "position": {
+                              "basis": "4px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if((tag('[]Refrigeration/valveDischarge')) > 100, 100, if((tag('[]Refrigeration/valveDischarge')) < 0, 0, (tag('[]Refrigeration/valveDischarge')) / 100 * 100))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "bgColor": "#9a9a97",
+                              "color": "#2c2c2a",
+                              "maximum": 100,
+                              "style": {
+                                "borderRadius": "0",
+                                "height": "4px"
+                              },
+                              "value": 0
+                            },
+                            "type": "ia.display.progress"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Dv"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#c9c9c6",
+                            "gap": "6px",
+                            "padding": "10px 12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Row"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "row",
+                      "style": {
+                        "backgroundColor": "#6e6e6c",
+                        "gap": "1px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Body"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "0px",
+                    "overflow": "hidden",
+                    "padding": "0"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Sys"
+            },
+            "position": {
+              "basis": "106px"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "#c9c9c6",
+                "border": "1px solid #6e6e6c",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "TwrRep"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "row",
+                  "elementPosition": {
+                    "basis": "0",
+                    "grow": 1,
+                    "shrink": 1
+                  },
+                  "instances": [
+                    {
+                      "displayName": "CT-01",
+                      "instancePosition": {
+                        "basis": "0",
+                        "grow": 1,
+                        "shrink": 1
+                      },
+                      "instanceStyle": {},
+                      "tagPath": "[]Refrigeration/Tower1"
+                    },
+                    {
+                      "displayName": "CT-02",
+                      "instancePosition": {
+                        "basis": "0",
+                        "grow": 1,
+                        "shrink": 1
+                      },
+                      "instanceStyle": {},
+                      "tagPath": "[]Refrigeration/Tower2"
+                    }
+                  ],
+                  "path": "templates/units/Tower",
+                  "style": {
+                    "gap": "12px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": {
+              "name": "TwrRow"
+            },
+            "position": {
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "0"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "padding": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#b6b6b3",
+        "gap": "0px",
+        "overflow": "hidden",
+        "padding": "0"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

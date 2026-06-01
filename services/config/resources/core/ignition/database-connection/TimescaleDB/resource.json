@@ -1,0 +1,14 @@
+{
+  "scope": "A",
+  "description": "Connection to local TimescaleDB",
+  "version": 1,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "config.json"
+  ],
+  "attributes": {
+    "uuid": "13e0ab48-1a42-4f7e-b679-318df38c1587",
+    "enabled": true
+  }
+}
