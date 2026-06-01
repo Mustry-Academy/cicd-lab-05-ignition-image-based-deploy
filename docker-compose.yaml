@@ -237,7 +237,7 @@ services:
   # gateway container from a new image, plus `docker login`/`docker pull` to
   # fetch that image from GHCR. Both need the host Docker daemon. The image is
   # BUILT on a GitHub-hosted runner (free, portable) — only the pull-and-recreate
-  # half needs this self-hosted runner. Lab convenience, NOT a production pattern.
+  # half needs this self-hosted runner. Lab convenience, NOT a production pattern. 
   github-runner:
     image: myoung34/github-runner:latest
     container_name: lab05-runner
