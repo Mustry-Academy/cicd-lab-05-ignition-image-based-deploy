@@ -89,6 +89,24 @@ re-tag fails with `manifest unknown`.
 - **Rollback (manual dispatch):** the version you asked to re-promote was never released — there's no
   `:vX.Y.Z` image for it. Use a version that actually shipped to prod before.
 
+## `no matching manifest for linux/arm64/v8` on pull (Apple Silicon)
+
+The `deploy` step on your self-hosted runner fails with `no matching manifest for linux/arm64/v8`.
+Cause: the **build** ran on GitHub's `ubuntu-latest` (amd64) and produced an **amd64-only** image,
+but your runner is on Apple Silicon (**arm64**), so the pull finds no matching architecture.
+
+Fixed by building **multi-arch**: `deploy.yml`'s build job uses `docker/setup-qemu-action` and
+`platforms: linux/amd64,linux/arm64`, so the pushed image runs natively on both. (Cheap here — the
+Dockerfile is COPY-only, so there's nothing to emulate.)
+
+If you still see it: the existing `:dev` image in GHCR is the **old amd64-only** one. Trigger a fresh
+build (push any gateway-content change to `develop`) so a multi-arch `:dev` overwrites it, then the
+deploy pulls cleanly. Confirm the published image is multi-arch with:
+```bash
+docker buildx imagetools inspect ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:dev
+# should list both linux/amd64 and linux/arm64
+```
+
 ## The deploy ran but my change isn't visible
 
 - **Right gateway?** `local` = :8088 (your authoring gateway, file-based), `dev` = :8089, `prod` = :8090.

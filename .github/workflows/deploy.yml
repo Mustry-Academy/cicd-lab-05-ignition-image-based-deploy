@@ -7,7 +7,8 @@
 # Image-based deploy, in two jobs that mirror the two halves of the pattern:
 #
 #   build  (ubuntu-latest, GitHub-hosted, FREE)
-#     → docker build bakes projects/config/modules into an image
+#     → docker build bakes projects/config/modules into a MULTI-ARCH image
+#       (linux/amd64 + linux/arm64) so it runs natively on Intel and Apple Silicon
 #     → push it to GHCR tagged :sha-<short> (immutable) and :dev (moving)
 #
 #   deploy (self-hosted, lab05)
@@ -83,6 +84,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # QEMU lets this amd64 runner also emit the arm64 variant. Our Dockerfile
+      # is COPY-only (no RUN/compile), so there's nothing to emulate — building
+      # both platforms is cheap.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -91,6 +98,11 @@ jobs:
         with:
           context: .
           push: true
+          # Multi-arch so the image runs natively whether the deploy target is
+          # amd64 (Intel/Linux) or arm64 (Apple Silicon). Without this, an
+          # arm64 runner pulling an amd64-only image fails with
+          # "no matching manifest for linux/arm64/v8".
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ steps.meta.outputs.base }}:sha-${{ steps.meta.outputs.short }}
             ${{ steps.meta.outputs.base }}:dev
