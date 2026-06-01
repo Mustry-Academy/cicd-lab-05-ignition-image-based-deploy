@@ -21,11 +21,11 @@ The local → dev → prod story is the same; only the dev/prod **delivery mecha
 
 ## Prerequisites
 
-- A fork of this repo (the self-hosted runner registers against your fork, and images push to *your* GHCR namespace).
+- A fork of this repo. The self-hosted runner registers against your fork, and the CI builds publish images to **your own** GHCR namespace (`ghcr.io/<your-fork-owner>/cicd-lab-05-ignition`) — never to Mustry's. **Enable Actions in your fork first**: forks ship with workflows disabled — open the *Actions* tab and click the green "I understand my workflows, go ahead and enable them" button.
 - A GitHub Personal Access Token with `repo` scope — the runner uses it to auto-register; never leaves your `.env`.
 - **≥ 8 GB free RAM for Docker** — three Ignition gateways at 1 GB each, plus TimescaleDB, the runner, and Docker overhead.
 - _Background:_ [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) sets up the Ignition stack and the file-based pattern this lab contrasts with. It helps but isn't required — this lab stands alone.
-- _No extra registry account:_ images push to **GitHub Container Registry (GHCR)**, authenticated with the workflow's built-in `GITHUB_TOKEN`.
+- _No extra registry account:_ the CI publishes to **GitHub Container Registry (GHCR)** under your fork, authenticated with the workflow's built-in `GITHUB_TOKEN`. The **local** scripts (`build-image.sh`/`deploy-image.sh`) need no registry at all — they build and run images on your machine.
 
 ## Quick start
 
@@ -41,8 +41,8 @@ Once setup finishes you have three Ignition gateways:
 | Gateway | URL | What runs there |
 |---|---|---|
 | `local` | http://localhost:8088 | Bind-mounted from `./projects/` + `./services/config/` — your **authoring** gateway (file-based, like Lab 04). |
-| `dev` | http://localhost:8089 | The **image** `deploy.yml` builds on push to `main`. Base image (empty) until the first deploy. |
-| `prod` | http://localhost:8090 | The **image** `release.yml` promotes on tag push `v*`. Base image (empty) until the first release. |
+| `dev` | http://localhost:8089 | The **image** `deploy.yml` builds on push to **`develop`**. Base image (empty) until the first deploy. |
+| `prod` | http://localhost:8090 | The **image** `release.yml` promotes on tag push `v*` (cut from `main`). Base image (empty) until the first release. |
 
 Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD`, default `admin / lab05password`).
 
@@ -74,8 +74,8 @@ cicd-lab-05-ignition-image-based-deploy/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                      ← PR validation: JSON, hadolint, actionlint, build smoke test (ubuntu-latest)
-│   │   ├── deploy.yml                  ← push to main → build+push image → recreate dev gateway
-│   │   └── release.yml                 ← tag v* → re-tag tested image → recreate prod gateway
+│   │   ├── deploy.yml                  ← push to develop → build+push image → recreate dev gateway
+│   │   └── release.yml                 ← tag v* (on main) → re-tag the dev image → recreate prod gateway
 │   ├── actionlint.yaml                 ← declares the self-hosted `lab05` runner label
 │   └── pull_request_template.md
 ├── exercises/
@@ -118,23 +118,53 @@ The single TimescaleDB hosts `ignition_loc`/`ignition_dev`/`ignition_prd`. **His
 
 `name: cicd-lab05` at the top of the compose file pins the project name so the self-hosted runner — which checks the repo out into its own working directory — recreates *these* containers instead of a parallel set.
 
+## Branching model (Git Flow)
+
+This lab uses **Git Flow**: two long-lived branches map to the two deployed gateways.
+
+```
+feature/*  ─┐
+            ├─PR→  develop ──push→  deploy.yml ──build+push→ :dev image ──→ DEV gateway
+hotfix/* ─┐ │
+          │ └── release/* ─PR→ main ──tag vX.Y.Z→ release.yml ──promote :dev→ :vX.Y.Z+:prod ──→ PROD gateway
+          └────────────────────────┘
+```
+
+| Branch | Role | What CI does |
+|---|---|---|
+| `develop` | Integration — feature branches merge here | `deploy.yml` builds the image and ships it to the **dev** gateway |
+| `main` | Release-ready — only `release/*` and `hotfix/*` merge here | nothing on its own; you **tag** `vX.Y.Z` to release |
+| `feature/*` | Day-to-day work, branched off `develop` | `ci.yml` validates the PR into `develop` |
+| `release/*` / `hotfix/*` | Stabilize a release / urgent fix, merged into `main` (and back to `develop`) | `ci.yml` validates the PR into `main` |
+
+**Releasing is promotion, not a rebuild.** A Git Flow merge into `main` creates a new commit SHA
+that has no image of its own, so `release.yml` promotes **the image dev already tested** — the
+`:dev` tag — re-tagging it to `:vX.Y.Z` + `:prod`. Prod runs the exact digest dev validated. The
+`release/*` branch is your freeze point: cut it when dev is where you want prod to be.
+
+> **Setup:** Git Flow needs a `develop` branch. Create it once in your fork
+> (`git checkout -b develop && git push -u origin develop`) and, optionally, set it as the fork's
+> **default branch** (*Settings → Branches*) so feature PRs target it by default.
+
 ## The CI/CD workflows
 
 Three workflows under [`.github/workflows/`](./.github/workflows/):
 
 | File | Trigger | Runner(s) | Purpose |
 |---|---|---|---|
-| [`ci.yml`](./.github/workflows/ci.yml) | PR to `main` | `ubuntu-latest` | Validate JSON + `.dockerignore`, lint the Dockerfile (hadolint) and workflows (actionlint), and **build the image** (no push) so a broken Dockerfile fails the PR. |
-| [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `main` (build paths), manual | `build`: `ubuntu-latest`<br>`deploy`: `[self-hosted, lab05]` | Build + push the image to GHCR (`:sha-<short>`, `:dev`), then pull it and recreate the **dev** gateway. |
-| [`release.yml`](./.github/workflows/release.yml) | Tag `v*`, manual | `promote`: `ubuntu-latest`<br>`deploy`: `[self-hosted, lab05]` | Re-tag the tested image to `:vX.Y.Z` + `:prod` (**no rebuild**) and recreate the **prod** gateway. |
+| [`ci.yml`](./.github/workflows/ci.yml) | PR to `develop` or `main` | `ubuntu-latest` | Validate JSON + `.dockerignore`, lint the Dockerfile (hadolint) and workflows (actionlint), and **build the image** (no push) so a broken Dockerfile fails the PR. |
+| [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `develop` (build paths), manual | `build`: `ubuntu-latest`<br>`deploy`: `[self-hosted, lab05]` | Build + push the image to GHCR (`:sha-<short>`, `:dev`), then pull it and recreate the **dev** gateway. |
+| [`release.yml`](./.github/workflows/release.yml) | Tag `v*` (on `main`), manual | `promote`: `ubuntu-latest`<br>`deploy`: `[self-hosted, lab05]` | Re-tag the **`:dev`** image (what dev is running) to `:vX.Y.Z` + `:prod` (**no rebuild**) and recreate the **prod** gateway. |
 
 The **build is portable** (free GitHub-hosted runner); only the **pull + recreate** needs the self-hosted runner that owns the gateway container. That split is the heart of image-based deploy.
 
 ### GHCR auth and environments
 
-- The build/promote jobs push with the workflow's built-in `GITHUB_TOKEN` (the workflows request `packages: write`). No registry password in `.env`, no extra account.
-- The deploy jobs log in with the same token to **pull**.
-- The first push creates a GHCR package under your fork's namespace. It defaults to **private**; that's fine — the runner authenticates. (Make it public under the package's settings if you want anonymous pulls.)
+- The build/promote jobs push to **your own fork's** namespace — the workflows derive `ghcr.io/<owner>/cicd-lab-05-ignition` from `github.repository_owner`, so a student's fork publishes under *their* account, not Mustry's. No image ever pushes to a registry you don't own.
+- Auth is the workflow's built-in `GITHUB_TOKEN` (the workflows request `packages: write`). No registry password in `.env`, no extra account. The deploy jobs log in with the same token to **pull**.
+- The first push creates a GHCR package under your namespace. It defaults to **private**; that's fine — the runner authenticates. (Make it public under the package's settings if you want anonymous pulls.)
+- If your fork lives under a GitHub **organization**, the org may restrict this: *Settings → Actions → General → Workflow permissions* must allow **read and write**, and Packages must be enabled. A 403 on push almost always traces back to one of these — see [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md).
+- **No GHCR needed for Blocks C and most of D's mechanics** — the local `build-image.sh`/`deploy-image.sh` flow runs entirely on your machine. GHCR only enters via the CI workflows.
 
 Each deploy job runs in a GitHub **environment** so you get per-stage history and optional gates:
 

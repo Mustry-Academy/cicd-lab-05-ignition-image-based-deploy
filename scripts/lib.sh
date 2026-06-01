@@ -68,12 +68,22 @@ gateway_service() {
 # Resolve the image repo base for the build/deploy scripts. Precedence:
 #   1. IGNITION_IMAGE_REPO already in the environment
 #   2. IGNITION_IMAGE_REPO from .env
-#   3. a local-only fallback so the build scripts work before GHCR is wired up
+#   3. a local-only fallback so the build scripts work with NO registry at all
+#
+# The local build/run/deploy flow doesn't need a registry — only the CI path
+# (deploy.yml/release.yml) pushes to GHCR, and it derives the namespace from the
+# fork owner without reading this value. So an unset IGNITION_IMAGE_REPO is the
+# normal case and yields a plain local image name.
 image_repo() {
   local repo="${IGNITION_IMAGE_REPO:-}"
   [ -z "$repo" ] && repo="$(env_value IGNITION_IMAGE_REPO)"
+  # Treat a leftover .env.example placeholder (e.g. ghcr.io/<your-github-user>/…)
+  # as unset — the angle brackets are illegal in a Docker reference and would
+  # fail the build with "invalid reference format".
+  case "$repo" in *'<'*|*'>'*) repo="" ;; esac
   [ -z "$repo" ] && repo="cicd-lab-05-ignition"   # local-only default (no registry)
-  printf '%s' "$repo"
+  # Docker references must be lowercase; GitHub usernames may have capitals.
+  printf '%s' "$repo" | tr '[:upper:]' '[:lower:]'
 }
 
 # Read a single KEY from a .env-style file (default: <repo>/.env).
