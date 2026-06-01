@@ -1,0 +1,148 @@
+# Build a gateway image and deploy it to the dev gateway on push to main.
+#
+# Image-based deploy, in two jobs that mirror the two halves of the pattern:
+#
+#   build  (ubuntu-latest, GitHub-hosted, FREE)
+#     → docker build bakes projects/config/modules into an image
+#     → push it to GHCR tagged :sha-<short> (immutable) and :dev (moving)
+#
+#   deploy (self-hosted, lab05)
+#     → docker pull the freshly built image
+#     → docker compose up -d ignition-dev recreates the container from it
+#     → smoke-check the gateway
+#
+# Only the deploy half needs the self-hosted runner (it owns the gateway
+# container). The build is portable — that split is the whole point.
+#
+# GHCR auth uses the built-in GITHUB_TOKEN: `packages: write` lets the build job
+# push; the deploy job logs in with the same token to pull. No PAT, no secret to
+# manage for the registry.
+#
+# Required setup on GitHub (Settings → Environments → "lab-gateway-dev"):
+#   Variable: IGNITION_URL  Optional. Defaults to http://ignition-dev:8088 (the
+#                           in-compose service name the bundled runner reaches).
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "projects/**"
+      - "services/**"
+      - "third-party-modules/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-lab-gateway-dev
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image name + tags
+        id: meta
+        # GHCR requires a lowercase path. Derive it from the owner, append a
+        # stable repo suffix, and tag with the short SHA (immutable) + dev.
+        run: |
+          set -euo pipefail
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          base="${REGISTRY}/${owner}/cicd-lab-05-ignition"
+          short="$(git rev-parse --short HEAD)"
+          {
+            echo "base=${base}"
+            echo "short=${short}"
+            echo "image=${base}:sha-${short}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Image: ${base}:sha-${short} (+ :dev)"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.base }}:sha-${{ steps.meta.outputs.short }}
+            ${{ steps.meta.outputs.base }}:dev
+          build-args: |
+            GIT_SHA=${{ steps.meta.outputs.short }}
+            IMAGE_SOURCE=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to dev gateway
+    needs: build
+    runs-on: [self-hosted, lab05]
+    environment: lab-gateway-dev
+    env:
+      IGNITION_DEV_IMAGE: ${{ needs.build.outputs.image }}
+      IGNITION_URL: ${{ vars.IGNITION_URL || 'http://ignition-dev:8088' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify deploy prerequisites
+        run: |
+          set -euo pipefail
+          command -v docker >/dev/null || { echo "docker CLI not on runner"; exit 1; }
+          docker compose version >/dev/null || { echo "docker compose v2 not on runner"; exit 1; }
+          test -n "$IGNITION_DEV_IMAGE" || { echo "build job did not produce an image ref"; exit 1; }
+          echo "Will deploy image: $IGNITION_DEV_IMAGE"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the freshly built image
+        run: docker pull "$IGNITION_DEV_IMAGE"
+
+      - name: Recreate the dev gateway from the new image
+        # The container's image changed, so compose recreates it. No file copy,
+        # no scan — project/config/modules are already inside the image.
+        run: docker compose up -d ignition-dev
+
+      - name: Smoke-check gateway health
+        # Image-based boot re-commissions the gateway, so allow more time than a
+        # file-based scan would need.
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            if curl -fsS --max-time 3 "$IGNITION_URL/StatusPing" 2>/dev/null | grep -q RUNNING; then
+              echo "dev gateway RUNNING after ~$((i * 2))s, serving $IGNITION_DEV_IMAGE"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "dev gateway did not reach RUNNING after deploy" >&2
+          docker logs --tail 100 lab05-ignition-dev >&2 || true
+          exit 1

@@ -1,0 +1,65 @@
+# .dockerignore — what NOT to send to the Docker build context.
+#
+# This is the image-based analogue of Lab 04's .deployignore. The build context
+# is everything Docker tars up and hands to the daemon before running the
+# Dockerfile. Anything matched here:
+#   - never enters the build context (faster builds, smaller upload)
+#   - can never be COPY-ed into the image by accident (smaller, cleaner image)
+#   - keeps secrets and lab tooling out of a published artifact
+#
+# Format: same glob rules as .gitignore. One pattern per line.
+#
+# Rule of thumb: the only things the Dockerfile actually COPYs are projects/,
+# services/config/, services/modules.json, and third-party-modules/. Everything
+# else is noise in the build context — exclude it.
+
+# Version control + git internals
+.git/
+.gitignore
+.gitattributes
+
+# Secrets and local env (NEVER bake these into a published image)
+.env
+.env.example
+
+# Lab teaching material — has nothing to do with the gateway runtime
+README.md
+LICENSE
+docs/
+exercises/
+instructor-notes/
+scripts/
+tests/
+
+# CI / compose / dev-only files
+.github/
+docker-compose.yaml
+Dockerfile
+.dockerignore
+
+# Database bootstrap (runs in the TimescaleDB sidecar, not the gateway image)
+db-init/
+
+# Per-instance keystores and secrets. The actual keystore files are gitignored
+# (regenerated per gateway), so they're never in the build context — these
+# patterns are belt-and-suspenders so a stray keystore can't get baked into a
+# shared image.
+**/keystore/*.jks
+**/keystore/*.p12
+**/*.idb
+
+# Ignition operational state + content-addressed blob noise — never bake these
+**/.resources/
+**/migration-log-*.md
+**/data/db/
+**/data/users.idb
+**/data/temp/
+**/data/logs/
+**/data/.metadata/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

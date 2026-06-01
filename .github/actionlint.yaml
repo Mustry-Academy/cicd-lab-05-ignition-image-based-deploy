@@ -1,0 +1,5 @@
+# Tell actionlint about the custom self-hosted runner labels this lab expects.
+# Without this, actionlint flags `lab05` as an unknown runner label.
+self-hosted-runner:
+  labels:
+    - lab05

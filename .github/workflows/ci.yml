@@ -1,0 +1,87 @@
+# PR validation — runs on every pull request targeting main.
+#
+# Purpose: catch the cheap stuff before a build/deploy gets near it. Everything
+# here runs on ubuntu-latest (free, no self-hosted runner). The expensive,
+# environment-specific half (pushing the image, recreating the gateway) lives in
+# deploy.yml and only runs after merge.
+#
+# The one image-specific addition vs a file-based lab: we actually BUILD the
+# image here (without pushing) so a broken Dockerfile fails the PR, not the
+# deploy.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JSON validity sweep
+        # Walks every *.json under projects/ and services/ and confirms it
+        # parses. Failures surface as PR annotations via the ::error syntax.
+        run: |
+          set +e
+          fail=0
+          while IFS= read -r f; do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "::error file=$f::Invalid JSON"
+              fail=1
+            fi
+          done < <(find projects services -type f -name '*.json' 2>/dev/null)
+          if [ "$fail" -eq 0 ]; then
+            echo "All JSON files parse cleanly."
+          fi
+          exit $fail
+
+      - name: .dockerignore sanity
+        # The build context must not carry secrets or lab tooling into the image.
+        # Confirm the must-exclude patterns are present (a missing .env exclusion
+        # would bake credentials into a published artifact).
+        run: |
+          set +e
+          [ -f .dockerignore ] || { echo "::error::No .dockerignore"; exit 1; }
+          fail=0
+          for must in ".env" ".git/" "scripts/" "docs/" "exercises/"; do
+            if ! grep -qxF "$must" .dockerignore; then
+              echo "::error file=.dockerignore::Missing required exclusion: $must"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] && echo ".dockerignore exclusions look fine."
+          exit $fail
+
+      - name: hadolint (Dockerfile)
+        # Lints the Dockerfile for common mistakes (unpinned base, bad COPY, etc).
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+      - name: actionlint
+        # Statically check every workflow file in .github/workflows/.
+        run: |
+          bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
+
+      - name: Build image (smoke test, no push)
+        # Prove the Dockerfile builds against the real project/config/modules.
+        # We do NOT push here — pushing happens in deploy.yml after merge.
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          build-args: |
+            GIT_SHA=${{ github.event.pull_request.head.sha }}

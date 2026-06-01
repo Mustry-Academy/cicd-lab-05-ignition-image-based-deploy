@@ -1,0 +1,135 @@
+# Promote a tested image to prod on tag push.
+#
+# The image-based payoff: we do NOT rebuild. The image that was built and tested
+# in dev (tagged :sha-<short>) is RE-TAGGED to :v<version> and :prod with a
+# server-side manifest copy (`docker buildx imagetools create`) — same bytes,
+# same digest dev ran. Then the prod gateway is recreated from it.
+#
+# Two jobs:
+#   promote (ubuntu-latest)  re-tag the existing :sha-<short> image → :vX.Y.Z + :prod
+#   deploy  (self-hosted)    pull :prod and recreate the prod gateway container
+#
+# Triggers on tags matching `v*` (e.g. v1.0.0). Also supports manual dispatch
+# with a tag input — that's the rollback button: re-promote any released tag's
+# image to prod without touching git.
+#
+# Add required reviewers on the lab-gateway-prod environment if you want a manual
+# approval gate before prod releases — common pattern, no workflow change needed.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to (re)promote to prod (e.g. v1.0.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-lab-gateway-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  promote:
+    name: Promote tested image to prod tag
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # On a tag push, github.ref already points at the tag. On manual
+          # dispatch, use the user-supplied input. Either way we resolve the
+          # commit so we can find the :sha-<short> image built earlier.
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Compute source + target tags
+        id: meta
+        run: |
+          set -euo pipefail
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          base="${REGISTRY}/${owner}/cicd-lab-05-ignition"
+          version="${{ github.event.inputs.tag || github.ref_name }}"
+          short="$(git rev-parse --short HEAD)"
+          {
+            echo "base=${base}"
+            echo "source=${base}:sha-${short}"
+            echo "version=${version}"
+            echo "image=${base}:${version}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Promote ${base}:sha-${short}  →  ${base}:${version} + ${base}:prod"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-tag the tested image (no rebuild)
+        # imagetools copies the manifest server-side: the prod tags point at the
+        # exact same digest dev tested. If this fails with "not found", the
+        # tagged commit was never built+deployed to dev — push it to main first.
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create \
+            --tag "${{ steps.meta.outputs.image }}" \
+            --tag "${{ steps.meta.outputs.base }}:prod" \
+            "${{ steps.meta.outputs.source }}"
+
+  deploy:
+    name: Deploy to prod gateway
+    needs: promote
+    runs-on: [self-hosted, lab05]
+    environment: lab-gateway-prod
+    env:
+      IGNITION_PROD_IMAGE: ${{ needs.promote.outputs.image }}
+      IGNITION_URL: ${{ vars.IGNITION_URL || 'http://ignition-prod:8088' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify deploy prerequisites
+        run: |
+          set -euo pipefail
+          command -v docker >/dev/null || { echo "docker CLI not on runner"; exit 1; }
+          docker compose version >/dev/null || { echo "docker compose v2 not on runner"; exit 1; }
+          test -n "$IGNITION_PROD_IMAGE" || { echo "promote job did not produce an image ref"; exit 1; }
+          echo "Will deploy image: $IGNITION_PROD_IMAGE"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the promoted image
+        run: docker pull "$IGNITION_PROD_IMAGE"
+
+      - name: Recreate the prod gateway from the promoted image
+        run: docker compose up -d ignition-prod
+
+      - name: Smoke-check gateway health
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            if curl -fsS --max-time 3 "$IGNITION_URL/StatusPing" 2>/dev/null | grep -q RUNNING; then
+              echo "prod gateway RUNNING after ~$((i * 2))s, serving $IGNITION_PROD_IMAGE"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "prod gateway did not reach RUNNING after release" >&2
+          docker logs --tail 100 lab05-ignition-prod >&2 || true
+          exit 1
