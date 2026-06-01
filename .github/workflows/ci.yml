@@ -1,9 +1,13 @@
-# PR validation — runs on every pull request targeting main.
+# PR validation — runs on every pull request into a long-lived Git Flow branch.
+#
+# Git Flow has two long-lived branches, so we validate PRs into both:
+#   develop  ← feature/* branches merge here (then deploy.yml ships to dev)
+#   main     ← release/* and hotfix/* branches merge here (then a tag ships to prod)
 #
 # Purpose: catch the cheap stuff before a build/deploy gets near it. Everything
 # here runs on ubuntu-latest (free, no self-hosted runner). The expensive,
 # environment-specific half (pushing the image, recreating the gateway) lives in
-# deploy.yml and only runs after merge.
+# deploy.yml / release.yml.
 #
 # The one image-specific addition vs a file-based lab: we actually BUILD the
 # image here (without pushing) so a broken Dockerfile fails the PR, not the
@@ -13,7 +17,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop, main]
 
 concurrency:
   group: ci-${{ github.ref }}

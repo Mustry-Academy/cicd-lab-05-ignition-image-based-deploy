@@ -1,17 +1,23 @@
-# Promote a tested image to prod on tag push.
+# Promote the tested DEV image to prod on tag push (Git Flow release).
 #
-# The image-based payoff: we do NOT rebuild. The image that was built and tested
-# in dev (tagged :sha-<short>) is RE-TAGGED to :v<version> and :prod with a
-# server-side manifest copy (`docker buildx imagetools create`) — same bytes,
-# same digest dev ran. Then the prod gateway is recreated from it.
+# Git Flow: a release is cut from `develop` via a `release/*` branch, merged into
+# `main`, and tagged `vX.Y.Z`. That tag fires this workflow. Because Git Flow's
+# merge into main creates a NEW commit SHA that has no image of its own, we do
+# NOT promote by commit — we promote the image currently running on dev (the
+# `:dev` tag, which `deploy.yml` published from `develop`). "Ship exactly what
+# dev validated."
+#
+# The image-based payoff: we do NOT rebuild. The `:dev` image is RE-TAGGED to
+# :vX.Y.Z + :prod with a server-side manifest copy (`docker buildx imagetools
+# create`) — same bytes, same digest dev ran. Then prod is recreated from it.
 #
 # Two jobs:
-#   promote (ubuntu-latest)  re-tag the existing :sha-<short> image → :vX.Y.Z + :prod
-#   deploy  (self-hosted)    pull :prod and recreate the prod gateway container
+#   promote (ubuntu-latest)  re-tag :dev → :vX.Y.Z + :prod  (no rebuild)
+#   deploy  (self-hosted)    pull :vX.Y.Z and recreate the prod gateway container
 #
 # Triggers on tags matching `v*` (e.g. v1.0.0). Also supports manual dispatch
-# with a tag input — that's the rollback button: re-promote any released tag's
-# image to prod without touching git.
+# with a version input — that's the rollback button: re-promote any ALREADY
+# RELEASED version's image (:vX.Y.Z) back to prod without touching git.
 #
 # Add required reviewers on the lab-gateway-prod environment if you want a manual
 # approval gate before prod releases — common pattern, no workflow change needed.
@@ -24,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to (re)promote to prod (e.g. v1.0.0)'
+        description: 'Already-released version to re-promote to prod (e.g. v1.0.0)'
         required: true
         type: string
 
@@ -46,12 +52,7 @@ jobs:
     outputs:
       image: ${{ steps.meta.outputs.image }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # On a tag push, github.ref already points at the tag. On manual
-          # dispatch, use the user-supplied input. Either way we resolve the
-          # commit so we can find the :sha-<short> image built earlier.
-          ref: ${{ github.event.inputs.tag || github.ref }}
+      # No checkout needed — the promote job only re-tags images in the registry.
 
       - name: Compute source + target tags
         id: meta
@@ -59,15 +60,23 @@ jobs:
           set -euo pipefail
           owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
           base="${REGISTRY}/${owner}/cicd-lab-05-ignition"
-          version="${{ github.event.inputs.tag || github.ref_name }}"
-          short="$(git rev-parse --short HEAD)"
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            # Manual dispatch = rollback / re-promote: the source is an image that
+            # was ALREADY released under :vX.Y.Z. We re-point :prod at it.
+            version="${{ github.event.inputs.tag }}"
+            source="${base}:${version}"
+          else
+            # Tag push = new release: promote whatever dev is running right now.
+            version="${{ github.ref_name }}"
+            source="${base}:dev"
+          fi
           {
             echo "base=${base}"
-            echo "source=${base}:sha-${short}"
+            echo "source=${source}"
             echo "version=${version}"
             echo "image=${base}:${version}"
           } >> "$GITHUB_OUTPUT"
-          echo "Promote ${base}:sha-${short}  →  ${base}:${version} + ${base}:prod"
+          echo "Promote ${source}  →  ${base}:${version} + ${base}:prod"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -78,8 +87,10 @@ jobs:
 
       - name: Re-tag the tested image (no rebuild)
         # imagetools copies the manifest server-side: the prod tags point at the
-        # exact same digest dev tested. If this fails with "not found", the
-        # tagged commit was never built+deployed to dev — push it to main first.
+        # exact same digest dev tested. If this fails with "not found":
+        #   - new release → there is no :dev image yet; push to `develop` so
+        #     deploy.yml builds and ships one first.
+        #   - rollback → that version was never released (no :vX.Y.Z image).
         run: |
           set -euo pipefail
           docker buildx imagetools create \

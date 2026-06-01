@@ -1,4 +1,8 @@
-# Build a gateway image and deploy it to the dev gateway on push to main.
+# Build a gateway image and deploy it to the dev gateway on push to develop.
+#
+# Git Flow: `develop` is the integration branch. Feature branches merge into it,
+# and every push here builds an image and ships it to the DEV gateway. Releases
+# to prod happen separately (main + tag → release.yml).
 #
 # Image-based deploy, in two jobs that mirror the two halves of the pattern:
 #
@@ -26,7 +30,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
     paths:
       - "projects/**"
       - "services/**"
