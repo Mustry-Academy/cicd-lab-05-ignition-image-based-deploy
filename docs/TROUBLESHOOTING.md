@@ -25,6 +25,11 @@ are one of the first three.
 
 ## `docker build` / `scripts/build-image.sh` fails
 
+- **`invalid reference format` with `ghcr.io/<your-github-user>/…` in the tag.** A stale `.env` still
+  has the `.env.example` placeholder `IGNITION_IMAGE_REPO=ghcr.io/<your-github-user>/…`; the literal
+  `<`/`>` are illegal in a Docker tag. `scripts/lib.sh` now ignores that placeholder and falls back to
+  the registry-free local name `cicd-lab-05-ignition`, so a fresh `.env` builds fine. If you hit this on
+  an old `.env`, just **comment out the `IGNITION_IMAGE_REPO=` line** — the local scripts need no registry.
 - **"… not found in build context."** A `COPY` source path is wrong, or the path is excluded by
   [`.dockerignore`](../.dockerignore). Check the four `COPY` lines in the [`Dockerfile`](../Dockerfile)
   against what's actually on disk.
@@ -52,21 +57,37 @@ and `GATEWAY_ADMIN_PASSWORD`). The compose stack supplies all of these already, 
 
 ## GHCR push/pull fails (401 / 403 / denied)
 
-- **403 on push from the build job.** The workflow needs `permissions: packages: write` (it's set in
-  `deploy.yml` / `release.yml`). If you copied a job without it, add it.
+The images publish to **your own fork's** GHCR namespace (`ghcr.io/<your-fork-owner>/…`), so this is
+never about lacking access to *Mustry's* registry. A 403/401 almost always traces back to a GitHub
+setting on your fork:
+
+- **Workflow never ran at all.** Forks ship with Actions **disabled**. Open your fork's *Actions* tab
+  and click "I understand my workflows, go ahead and enable them." Nothing builds or pushes until you do.
+- **403 on push, org-owned fork.** If your fork lives under a GitHub **organization**, check
+  *Settings → Actions → General → Workflow permissions* = **Read and write**, and that
+  *Settings → … → Packages* aren't disabled for the org. Personal forks are read-write by default.
+- **`denied: installation not allowed to Create organization package`.** Same org policy as above, or
+  the org blocks package creation — push under a **personal** fork instead.
+- **403 even with `packages: write`.** The workflow already requests it (in `deploy.yml` / `release.yml`);
+  if you copied a job and dropped the `permissions:` block, add `packages: write` back.
 - **401 on pull from the deploy job.** The deploy job must `docker login ghcr.io` with `GITHUB_TOKEN`
   before `docker pull` — confirm the *Log in to GHCR* step is present and ran.
-- **`denied: permission_denied` / wrong namespace.** GHCR paths must be lowercase. The workflow
-  lowercases the owner; if you hand-edited the image name, check the casing.
+- **Wrong namespace / `invalid reference format`.** GHCR paths must be lowercase. CI lowercases the owner
+  automatically; the local `scripts/lib.sh` also lowercases and ignores the `.env.example` placeholder.
+  If you hand-edited an image name, check for capitals or stray `<…>`.
 - **Pulling locally (outside CI).** A private package needs `docker login ghcr.io` with a PAT that has
-  `read:packages`. Or make the package public in its settings.
+  `read:packages`. Or make the package public in its settings. (You don't need this for the lab — the
+  local `build-image.sh`/`deploy-image.sh` flow uses local images and never touches GHCR.)
 
 ## `manifest unknown` when releasing
 
-`release.yml` promotes `:sha-<short>` of the **tagged commit**. If that image was never built, the
-re-tag fails with `manifest unknown`. Cause: you tagged a commit that hadn't been pushed to `main`
-and deployed yet. Fix: get the commit onto `main` (so `deploy.yml` builds its `:sha-…` image), then
-push the tag — or re-run `release.yml` once the build exists.
+`release.yml` promotes the **`:dev`** image (what dev is running). If no `:dev` image exists yet, the
+re-tag fails with `manifest unknown`.
+
+- **New release (tag push):** nothing has ever been shipped to dev. Push a change to **`develop`** so
+  `deploy.yml` builds and publishes `:dev` first, then tag the release.
+- **Rollback (manual dispatch):** the version you asked to re-promote was never released — there's no
+  `:vX.Y.Z` image for it. Use a version that actually shipped to prod before.
 
 ## The deploy ran but my change isn't visible
 
@@ -84,8 +105,8 @@ push the tag — or re-run `release.yml` once the build exists.
 ## dev/prod stuck on the base image (empty gateway)
 
 That's the **default** until the first deploy — `IGNITION_DEV_IMAGE` / `IGNITION_PROD_IMAGE` are unset,
-so compose falls back to the base Ignition image. Run `deploy.yml` (push to main) / `release.yml`
-(tag), or locally `scripts/build-image.sh && scripts/deploy-image.sh dev cicd-lab-05-ignition:local`.
+so compose falls back to the base Ignition image. Run `deploy.yml` (push to `develop`) / `release.yml`
+(tag on `main`), or locally `scripts/build-image.sh && scripts/deploy-image.sh dev cicd-lab-05-ignition:local`.
 
 ## The self-hosted runner is offline / jobs queue forever
 
@@ -98,7 +119,7 @@ so compose falls back to the base Ignition image. Run `deploy.yml` (push to main
 ## The runner recreates the WRONG containers (a duplicate stack appears)
 
 The deploy job runs `docker compose up -d ignition-dev` from the runner's checkout. If a parallel set
-of containers shows up, the Compose **project name** didn't match. This lab pins it with `name: lab05`
+of containers shows up, the Compose **project name** didn't match. This lab pins it with `name: cicd-lab05`
 at the top of `docker-compose.yaml` — confirm that line is present and unchanged.
 
 ## `git status` shows dozens of `config.json` / `resource.json` changes
