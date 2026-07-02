@@ -130,7 +130,7 @@ hotfix/* ─┐ │
           └────────────────────────┘
 ```
 
-| Branch | Role | What CI does |
+| Branch | Role | What CWe-does |
 |---|---|---|
 | `develop` | Integration — feature branches merge here | `deploy.yml` builds the image and ships it to the **dev** gateway |
 | `main` | Release-ready — only `release/*` and `hotfix/*` merge here | nothing on its own; you **tag** `vX.Y.Z` to release |

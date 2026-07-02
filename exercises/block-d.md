@@ -31,7 +31,7 @@ You'll need:
 
 Read ahead if you like: [`docs/image-based-deploy-pattern.md`](../docs/image-based-deploy-pattern.md).
 
-## I do (20 min)
+## We-do (20 min)
 
 ### The five steps
 

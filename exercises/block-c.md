@@ -24,7 +24,7 @@ scripts/setup.sh    # idempotent — safe even if the stack is already up
 
 You'll need Docker with Compose v2 and ~8 GB free RAM. No GitHub setup yet — that's Block D. If you'd like to read ahead: [`docs/dockerfile-anatomy.md`](../docs/dockerfile-anatomy.md).
 
-## I do (20 min)
+## We-do (20 min)
 
 ### The mental model
 
@@ -141,7 +141,7 @@ This is the move Lab 04 *couldn't* do with a scan. Pick a module that's present 
 3. Add a pattern to `.dockerignore` (e.g. `*.local`) so it's excluded. Re-run `scripts/validate.sh` — the `.dockerignore` sanity check should still pass (your new pattern doesn't remove the required ones).
 4. Delete `NOTES.local` when done.
 
-### Part 3 — Tag like CI does, and trace it (10 min)
+### Part 3 — Tag like CWe-does, and trace it (10 min)
 
 1. Build with an extra moving tag, the way `deploy.yml` tags `:dev`:
    ```bash
