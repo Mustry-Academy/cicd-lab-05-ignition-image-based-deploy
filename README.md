@@ -97,7 +97,9 @@ cicd-lab-05-ignition-image-based-deploy/
 │   ├── trigger-scan.sh                 ← scan the LOCAL gateway (the file-based inner loop)
 │   ├── validate.sh                     ← mirrors CI (JSON, .dockerignore, hadolint, actionlint)
 │   ├── lib.sh                          ← shared helpers
-│   └── git-hooks/                      ← skip-worktree hooks for Ignition state files
+│   ├── clean-ignition-resource-churn.sh ← undo volatile-only resource.json rewrites (dry-run / --apply)
+│   ├── git-diff/                       ← textconv normalizer that hides volatile metadata in diffs
+│   └── git-hooks/                      ← skip-worktree hooks for the machine-local config file
 ├── projects/                           ← project content (baked into the image; bind-mounted into `local`)
 │   └── example-project/                ← a real Perspective project (views, templates)
 ├── services/
