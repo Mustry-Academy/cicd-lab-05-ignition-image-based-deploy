@@ -140,15 +140,21 @@ The deploy job runs `docker compose up -d ignition-dev` from the runner's checko
 of containers shows up, the Compose **project name** didn't match. This lab pins it with `name: cicd-lab05`
 at the top of `docker-compose.yaml` — confirm that line is present and unchanged.
 
-## `git status` shows dozens of `config.json` / `resource.json` changes
+## `git status` shows lots of `resource.json` changes
 
-Ignition rewrites these on every interaction. The repo ships a git hook that marks them
-`skip-worktree`; `scripts/setup.sh` installs it. If you see the churn:
+Ignition rewrites the `resource.json` manifests on every interaction, usually touching nothing
+but volatile metadata (modification timestamp, actor, signature). That churn is **meant to be
+visible** — real edits must show up in git — and it's undone, not hidden:
 
 ```bash
-scripts/setup.sh
-bash scripts/git-hooks/skip-worktree-ignition-resources
+scripts/clean-ignition-resource-churn.sh          # dry run: lists volatile-only files
+scripts/clean-ignition-resource-churn.sh --apply  # restores them from HEAD
 ```
+
+Files with real content changes (and anything staged) are never touched by the script.
+`git diff` already hides the volatile metadata via a textconv driver wired by `scripts/setup.sh`;
+re-run it if diffs still show timestamp/signature noise. Only the machine-local
+`local-system-properties/config.json` stays `skip-worktree` (the hooks re-apply it).
 
 ## Validate before you push
 
