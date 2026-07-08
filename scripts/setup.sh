@@ -148,8 +148,8 @@ ensure_env_file() {
     fi
     echo -e "${YELLOW}.env not found — copying from .env.example.${NC}"
     cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
-    echo -e "${YELLOW}Edit .env to set gateway passwords; the IGNITION_API_KEY_* values${NC}"
-    echo -e "${YELLOW}are filled in after first login to each gateway.${NC}"
+    echo -e "${YELLOW}Edit .env to set gateway passwords. The IGNITION_API_KEY already${NC}"
+    echo -e "${YELLOW}matches the pre-provisioned token — no gateway UI steps needed.${NC}"
     echo ""
 }
 
@@ -200,6 +200,34 @@ wait_for_gateway() {
 for gw in "${LAB_GATEWAYS[@]}"; do
     wait_for_gateway "$gw"
 done
+
+# ---- API-permission repair (first boot only) ------------------------------
+# On the FIRST boot of a fresh gateway container, Ignition's auto-commissioning
+# resets the read/write permissions in security-properties, which locks the
+# pre-provisioned API key out: it still authenticates (bad key = 401) but every
+# call gets 403. Detect that and graft the APIToken permissions back
+# (scripts/fix-gateway-api-perms.sh restarts the affected gateways). The local
+# gateway only hits this once (persistent volume); dev/prod hit it again on
+# every image deploy — the deploy flow handles those.
+repair_api_perms() {
+    load_api_key_from_env local
+    if is_placeholder_api_key; then
+        return 0   # no key to probe with; initial_scan prints the guidance
+    fi
+    local needs_fix=()
+    local gw url code
+    for gw in "${LAB_GATEWAYS[@]}"; do
+        url="$(gateway_url "$gw")"
+        code="$(curl -s -o /dev/null -w '%{http_code}' -m 10 -X POST             -H "X-Ignition-API-Token: $IGNITION_API_KEY"             "$url/data/api/v1/scan/projects" || true)"
+        [ "$code" = "403" ] && needs_fix+=("$gw")
+    done
+    [ ${#needs_fix[@]} -eq 0 ] && return 0
+    echo -e "${YELLOW}First-boot commissioning reset the API permissions on: ${needs_fix[*]}${NC}"
+    echo "Grafting the APIToken permissions back and restarting..."
+    "$SCRIPT_DIR/fix-gateway-api-perms.sh" "${needs_fix[@]}"
+}
+
+repair_api_perms
 
 # ---- Initial scan (local only) -------------------------------------------
 # Local has projects on disk from the bind mount; dev/prod start empty by
