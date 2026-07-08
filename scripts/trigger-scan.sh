@@ -103,7 +103,8 @@ load_api_key_from_env "$gateway"
 if [ -z "${IGNITION_API_KEY:-}" ]; then
   echo "ERROR: IGNITION_API_KEY is not set (env or .env)." >&2
   echo "Looked for IGNITION_API_KEY_${gateway^^} and IGNITION_API_KEY in .env." >&2
-  echo "Generate one in the gateway UI at $IGNITION_URL — Config → Security → API Keys → New" >&2
+  echo "Copy the IGNITION_API_KEY line from .env.example — it matches the" >&2
+  echo "pre-provisioned 'cicd' token baked into services/config." >&2
   exit 2
 fi
 

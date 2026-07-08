@@ -212,10 +212,9 @@ initial_scan() {
 
     load_api_key_from_env local
     if is_placeholder_api_key; then
-        echo -e "${YELLOW}No real API key for the local gateway in .env yet — skipping initial scan.${NC}"
-        echo "  Create one in the local gateway UI (http://localhost:8088):"
-        echo "    Config → Security → API Keys → New (with Project Scan + Config Scan permission)"
-        echo "  Drop the value into .env as IGNITION_API_KEY_LOCAL=<value>, then run:"
+        echo -e "${YELLOW}No API key in .env yet — skipping initial scan.${NC}"
+        echo "  The lab ships a pre-provisioned token; copy the IGNITION_API_KEY line"
+        echo "  from .env.example into .env, then run:"
         echo "    scripts/trigger-scan.sh both --gateway local"
         return 0
     fi
@@ -256,11 +255,9 @@ echo "  Username: ${ACTUAL_PG_USER:-ignition}  Password: ${ACTUAL_PG_PASS:-(see 
 echo ""
 if is_placeholder_api_key; then
     echo -e "${YELLOW}Next steps (LOCAL gateway only):${NC}"
-    echo "  The local gateway is your file-based authoring loop. To scan it via the API:"
-    echo "    1. Open http://localhost:8088 and log in."
-    echo "    2. Create an API key (Config → Security → API Keys → New) with a role"
-    echo "       that includes Project Scan + Config Scan."
-    echo "    3. Drop the value into .env as IGNITION_API_KEY_LOCAL=<value>"
+    echo "  The local gateway is your file-based authoring loop. To scan it via the API,"
+    echo "  copy the IGNITION_API_KEY line from .env.example into .env — it matches the"
+    echo "  pre-provisioned 'cicd' token baked into services/config, so it works as-is."
     echo "  Dev and prod are NOT scanned — they're redeployed by building/promoting an"
     echo "  image (see exercises/block-c.md and block-d.md). No API key needed for them."
     echo ""
