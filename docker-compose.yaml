@@ -249,7 +249,9 @@ services:
       RUNNER_NAME: "${RUNNER_NAME:-lab05-runner}"
       RUNNER_SCOPE: repo
       LABELS: "self-hosted,lab05"
-      EPHEMERAL: "false"
+      # No EPHEMERAL here on purpose: the image treats ANY non-empty value
+      # (even "false") as "enable --ephemeral". Leave it unset for a
+      # persistent runner.
       DISABLE_AUTO_UPDATE: "true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
