@@ -5,12 +5,15 @@
 * 40 min you-do
 * 10 min debrief
 
-Everything in this block runs on your own machine. No fork with Actions, no PAT,
-no registry account: a gateway image is ~2 GB, and uploading that from a course
-laptop is not a good use of your hour. The registry legs of the pipeline (push +
-pull) were covered in the teaching; here you do build, tag and run — the parts
-where all the real mechanics live. Your local Docker image store plays the role
-of the registry.
+Everything in this block runs on your own machine, **and you type the deploy
+commands yourself — no script**. In a real setup this block is automated by the
+same GitHub Actions you built in Lab 04: a merge to `main` fires `deploy.yml`,
+a tag fires `release.yml`; only the steps inside the jobs change (build + push +
+pull + recreate instead of copy + scan). We skip GitHub today because a gateway
+image is ~2 GB, and uploading that from a course laptop is not a good use of
+your hour — the transport isn't the lesson. Every command below is a line the
+workflow would run; your local Docker image store plays the role of the
+registry.
 
 ## Goal
 
@@ -32,20 +35,29 @@ TimescaleDB).
 Together, we deploy the Block C image to the dev gateway once:
 
 1. **Before:** `docker inspect -f '{{.Config.Image}}' lab05-ignition-dev` — dev runs the plain base image (an empty gateway).
-2. **Deploy:** `scripts/deploy-image.sh dev cicd-lab-05-ignition:local` — the script sets `IGNITION_DEV_IMAGE` and runs `docker compose up -d ignition-dev`; compose sees a new image and recreates the container.
-3. **Verify:** http://localhost:8089 → example-project is there, plus the module change you baked in Block C. No copy, no scan: the container was **replaced**.
-4. **After:** inspect again — dev now runs your image.
+2. **Deploy — one command:**
+   ```bash
+   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-dev
+   ```
+   `docker-compose.yaml` interpolates `IGNITION_DEV_IMAGE` into the dev service's
+   `image:`; compose sees a new image and recreates the container.
+3. **Wait for RUNNING:** `curl -s localhost:8089/StatusPing` until it prints
+   RUNNING (a fresh-image boot re-commissions the gateway — give it a few minutes).
+4. **Verify:** http://localhost:8089 → example-project is there, plus the module change you baked in Block C. No copy, no scan: the container was **replaced**. Inspect again — dev now runs your image.
 5. **What persisted:** historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.
 
 ## You do (40 min)
 
-### Part 1 — Deploy your image to dev (10 min)
+### Part 1 — Deploy your image to dev, command by command (10 min)
 
 Repeat the we-do yourself, from your own build:
 
 1. Confirm which image dev runs (`docker inspect -f '{{.Config.Image}}' lab05-ignition-dev`).
-2. `scripts/deploy-image.sh dev cicd-lab-05-ignition:local` and wait for RUNNING.
-3. Verify at :8089 and inspect again.
+2. Deploy:
+   ```bash
+   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-dev
+   ```
+3. Poll `curl -s localhost:8089/StatusPing` until RUNNING, then verify at :8089 and inspect again.
 
 ### Part 2 — Ship a change end-to-end (15 min)
 
@@ -63,16 +75,16 @@ gets its own immutable `:sha` tag — that tag is your rollback point in Part 3.
 4. Rebuild + redeploy:
    ```bash
    scripts/build-image.sh
-   scripts/deploy-image.sh dev cicd-lab-05-ignition:local
+   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-dev
    ```
 5. Verify at :8089 — your change is live. `docker images` now shows **two** `:sha-…` tags: two deployable versions, both still on your machine.
 
 ### Part 3 — Roll back to the previous build (10 min)
 
 1. Pretend Part 2's change broke something on dev. You need the previous version back, now.
-2. Deploy the **old** tag you wrote down in step 1 of Part 2:
+2. Deploy the **old** tag you wrote down in step 1 of Part 2 — the same command, older name:
    ```bash
-   scripts/deploy-image.sh dev cicd-lab-05-ignition:sha-<the-old-short-sha>
+   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:sha-<the-old-short-sha> docker compose up -d ignition-dev
    ```
 3. Verify at :8089 — the view is back to its previous state.
 4. Count the irreversible steps you just took. (Zero: both versions still exist, and you can flip between them all afternoon.)
@@ -95,13 +107,12 @@ gets its own immutable `:sha` tag — that tag is your rollback point in Part 3.
 
 Two directions, pick by appetite:
 
-1. **Go deeper on the image** (see the assignment slides): shrink the build
-   context with `--progress=plain`, do layer forensics with
-   `docker history --no-trunc`, or (if you have a fork with Actions) add a
-   no-push `docker build` smoke-test job to `ci.yml` so a broken Dockerfile
-   fails the PR.
-2. **A first taste of Lab 06** — bake more kinds of cargo, the way the Wilms
-   production image does:
+1. **Go deeper on the image:** shrink the build context with
+   `--progress=plain`, do layer forensics with `docker history --no-trunc`, or
+   (if you have a fork with Actions) add a no-push `docker build` smoke-test
+   job to `ci.yml` so a broken Dockerfile fails the PR.
+2. **A first taste of Lab 06** — bake more kinds of cargo, the way the
+   production image from the teaching does:
    - **A third-party module:** enable an unused `.modl` from
      `third-party-modules/` in `services/modules.json`, rebuild, deploy to dev,
      find it under Config → Modules.
@@ -110,9 +121,9 @@ Two directions, pick by appetite:
      `CREATE TABLE`, add a `COPY db-migrations/ /db-migrations/` layer, rebuild,
      and read the file back out of the image with `--entrypoint cat`. Nothing
      runs it yet — Lab 06 wires that up.
-   - **An extra JAR:** add a `COPY` layer for a JAR the way Wilms ships its
-     RabbitMQ client into `lib/core/gateway/`. Where in the layer order does it
-     belong, and why?
+   - **An extra JAR:** add a `COPY` layer for a JAR the way the production
+     image ships its RabbitMQ client into `lib/core/gateway/`. Where in the
+     layer order does it belong, and why?
 
 ## Debrief (10 min)
 

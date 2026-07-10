@@ -123,16 +123,27 @@ body{
 .does li span b{font-weight:700}
 .does code{font-family:'IBM Plex Mono';font-size:12px;color:var(--blue-d)}
 
-/* definition cards (image / container / dockerfile) */
-.defs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
-.defcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-.defcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--blue)}
-.defcard.c2:before{background:var(--teal)}
-.defcard.c3:before{background:var(--peri)}
-.defcard .pn{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);font-weight:600;letter-spacing:1px}
-.defcard h4{font-size:17px;font-weight:800;letter-spacing:-.3px;margin:8px 0 4px}
-.defcard p{font-size:13px;color:var(--txt-dim);line-height:1.5;margin-top:6px}
-.defcard p code{font-family:'IBM Plex Mono';font-size:12px;color:var(--blue-d)}
+/* ---- image / dockerfile / container flow (dark interactive) ---- */
+.triflow{flex:1;display:grid;grid-template-columns:auto auto auto auto auto;gap:20px;align-items:center;justify-content:center;min-height:0}
+.tf-arr{font-family:'IBM Plex Mono';text-align:center}
+.tf-arr .a{font-size:26px;color:var(--peri2)}
+.tf-arr .t{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;color:#9fb6cf;margin-top:4px}
+.tf-col{display:flex;flex-direction:column;gap:12px;align-items:center}
+.tf-cap{font-size:12.5px;color:#9fb6cf;max-width:26ch;text-align:center;line-height:1.5}
+.tf-cap b{color:#fff}
+.tf-file{border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(255,255,255,.04);padding:14px 16px;width:255px}
+.tf-file .fh{font-family:'IBM Plex Mono';font-size:11px;color:var(--peri2);margin-bottom:8px}
+.tf-file pre{font-family:'IBM Plex Mono';font-size:11.5px;color:#dbe6f5;line-height:1.65}
+.tf-file pre .cm{color:#7d93ad}
+.tf-stack{display:flex;flex-direction:column-reverse;gap:6px;width:235px}
+.tf-layer{border:2px solid var(--teal);border-radius:9px;padding:8px 12px;font-family:'IBM Plex Mono';font-size:11.5px;color:#dbe6f5;background:rgba(59,189,180,.06)}
+.tf-layer.base{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.04)}
+.tf-layer.rw{border-color:var(--warn);border-style:dashed;background:rgba(217,119,6,.12);color:#f0b765}
+.tf-box{border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:12px}
+.tf-box .bh{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono';font-size:10.5px;color:#9fb6cf;margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px}
+.tf-box .bh .run{width:8px;height:8px;border-radius:50%;background:var(--good)}
+.tf-box .tf-stack{width:215px}
+.tf-ghost{opacity:.5}
 
 /* section divider */
 .divider{flex:1;display:flex;flex-direction:column;justify-content:center}
@@ -187,6 +198,20 @@ body{
 .lstack-side .rule p{font-size:13.5px;color:#c4cfde;line-height:1.5}
 .lstack-side .rule p b{color:#fff}
 .lstack-side .rule code{font-family:'IBM Plex Mono';font-size:12px;color:var(--teal-l)}
+
+/* ---- normal-workflow map (dark interactive) ---- */
+.wmap{flex:1;display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr;gap:12px;align-items:stretch;align-content:center;min-height:0}
+.wnode{border:1px solid rgba(255,255,255,.22);border-radius:14px;background:rgba(255,255,255,.04);padding:18px 14px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.wnode .ic{font-size:26px;line-height:1}
+.wnode h4{font-size:14.5px;font-weight:800;color:#fff;letter-spacing:-.2px}
+.wnode p{font-size:11.5px;color:#9fb6cf;line-height:1.5}
+.wnode p b{color:#fff}
+.wnode code{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--teal-l)}
+.wnode.store{border-color:var(--teal);background:rgba(59,189,180,.08)}
+.wnode.plant{border-color:var(--warn)}
+.warr{align-self:center;text-align:center;font-family:'IBM Plex Mono'}
+.warr .a{font-size:22px;color:var(--peri2)}
+.warr .t{font-size:10px;letter-spacing:.5px;text-transform:uppercase;font-weight:600;color:#9fb6cf;margin-top:3px;max-width:11ch}
 
 /* ---- five-step pipeline ---- */
 .pipe5{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:stretch;margin-top:18px}
@@ -276,8 +301,9 @@ body{
         <div class="hd">What this lab adds</div>
         <ul>
           <li><span class="d"></span><span><b>The vocabulary:</b> what an image, a Dockerfile and a container actually are, so "deploy an image" stops being magic.</span></li>
-          <li><span class="d"></span><span><b>A real production reference:</b> the Wilms Ignition repo, which deploys the gateway as a custom image every day.</span></li>
-          <li><span class="d"></span><span><b>Your own gateway image:</b> you build it locally in the assignment and deploy it by replacing a container. No registry, no uploads.</span></li>
+          <li><span class="d"></span><span><b>How it's really done:</b> we walk a real production Ignition repo (on screen) that deploys the gateway as a custom image every day: its Dockerfile, its pipeline, its rollback.</span></li>
+          <li><span class="d"></span><span><b>Your own gateway image:</b> you build it locally, bake a change into it, and deploy it by <b>replacing the dev container</b>. Rollback = run the previous build's tag.</span></li>
+          <li><span class="d"></span><span><b>The honest trade-off:</b> what image-based buys you, what it costs you, and when you'd pick which. Both approaches stay in your toolbox.</span></li>
         </ul>
       </div>
     </div>
@@ -305,50 +331,63 @@ body{
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>image → Dockerfile → container → layers</span></div>
 </section>
 
-<!-- 4 · THE THREE WORDS, DEFINED -->
-<section class="slide">
+<!-- 4 · THE THREE WORDS, DEFINED (interactive flow) -->
+<section class="slide dark">
   <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block C · definitions</div>
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Block C · definitions</div>
   </div>
 
-  <div class="body">
-    <div class="sechead">
-      <span class="num">02</span>
-      <div>
-        <div class="title">Image, Dockerfile, container: the three words defined</div>
-        <div class="lead">Three different things, constantly mixed up in conversation. Get these straight and everything else in this lab follows.</div>
-      </div>
-    </div>
+  <div style="text-align:center">
+    <div style="font-weight:800;font-size:34px;letter-spacing:-.5px;color:#fff">Image, Dockerfile, container: the three words defined</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde;max-width:72ch">You've been running containers since Lab 02. Step through how the three pieces relate: <b style="color:#fff">recipe → frozen artifact → running copy</b>.</p>
+  </div>
 
-    <div class="defs">
-      <div class="defcard">
-        <div class="pn">THE ARTIFACT</div>
-        <h4>Image</h4>
-        <p>A <b>read-only snapshot of a filesystem</b>, plus metadata: which command to start, which ports to expose, labels. Stored as a stack of <b>layers</b>.</p>
-        <p>It does not run. It is a frozen template, like an installer or a golden VM snapshot. <code>inductiveautomation/ignition:8.3.6</code> is an image: the whole gateway install, frozen.</p>
+  <div class="triflow">
+    <div class="tf-col reveal" data-step="1">
+      <div class="tf-file">
+        <div class="fh">Dockerfile · committed to Git</div>
+        <pre>FROM ignition:8.3.6
+COPY services/config/ <span class="cm">…</span>
+COPY projects/        <span class="cm">…</span></pre>
       </div>
-      <div class="defcard c2">
-        <div class="pn">THE RECIPE</div>
-        <h4>Dockerfile</h4>
-        <p>A <b>text file that describes how to build an image</b>: start FROM a base image, COPY files in, RUN commands, set the USER and ENTRYPOINT.</p>
-        <p>Every instruction produces one layer. The Dockerfile is committed to Git, so the image is <b>reproducible from the repo</b>.</p>
-      </div>
-      <div class="defcard c3">
-        <div class="pn">THE RUNNING COPY</div>
-        <h4>Container</h4>
-        <p>A <b>running instance of an image</b>: the image's read-only layers plus one thin <b>writable layer</b> on top for everything the process writes at runtime.</p>
-        <p>Delete the container and the writable layer is gone; <b>the image is untouched</b>. Start it again and you get a fresh copy. One image can run as many containers.</p>
-      </div>
+      <div class="tf-cap"><b>The Dockerfile</b>: a text file, the recipe. It describes the image; it doesn't run.</div>
     </div>
-
-    <div class="callout">
-      <div class="lab" style="color:var(--blue)">You already live this daily</div>
-      <p>Every <code>docker compose up</code> since Lab 02 pulled the stock Ignition <b>image</b> and started a <b>container</b> from it. The only new move today: writing our own <b>Dockerfile</b> so the image contains <b>our</b> projects and config, not just an empty gateway.</p>
+    <div class="tf-arr reveal" data-step="2"><div class="a">→</div><div class="t">docker build</div></div>
+    <div class="tf-col reveal" data-step="2">
+      <div class="tf-stack">
+        <div class="tf-layer base">ignition:8.3.6 base</div>
+        <div class="tf-layer">layer: services/config/</div>
+        <div class="tf-layer">layer: projects/</div>
+      </div>
+      <div class="tf-cap"><b>The image</b>: read-only layers + metadata, one layer per instruction. Frozen; it does not run.</div>
+    </div>
+    <div class="tf-arr reveal" data-step="3"><div class="a">→</div><div class="t">docker run</div></div>
+    <div class="tf-col">
+      <div class="tf-box reveal" data-step="3">
+        <div class="bh"><span class="run"></span>container · lab05-ignition-dev</div>
+        <div class="tf-stack">
+          <div class="tf-layer base">ignition:8.3.6 base</div>
+          <div class="tf-layer">layer: services/config/</div>
+          <div class="tf-layer">layer: projects/</div>
+          <div class="tf-layer rw">writable layer · runtime state</div>
+        </div>
+      </div>
+      <div class="tf-box tf-ghost reveal" data-step="4">
+        <div class="bh"><span class="run"></span>container · demo</div>
+        <div class="tf-stack">
+          <div class="tf-layer rw">writable layer · its own</div>
+        </div>
+      </div>
+      <div class="tf-cap reveal" data-step="3"><b>A container</b>: the image's layers, read-only, plus one thin writable layer on top.</div>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>image = frozen · container = running · Dockerfile = how the image is made</span></div>
+  <div class="controls">
+    <span class="lead-step" id="tri-step">Three words, one flow. Step through how they relate.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next ▶</button>
+  </div>
 </section>
 
 <!-- 5 · THE LAB'S DOCKERFILE -->
@@ -360,7 +399,7 @@ body{
 
   <div class="body">
     <div class="sechead">
-      <span class="num">03</span>
+      <span class="num">02</span>
       <div>
         <div class="title">Read the lab's Dockerfile: a base image plus four <span class="mono" style="font-size:34px">COPY</span> lines</div>
         <div class="lead">This is the actual <span class="mono">Dockerfile</span> in this repo. Minimal on purpose: it bakes exactly what Lab 04's pipeline copied at deploy time.</div>
@@ -441,7 +480,7 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
   </div>
 </section>
 
-<!-- 7 · THE WILMS DOCKERFILE -->
+<!-- 7 · A PRODUCTION DOCKERFILE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -450,10 +489,10 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
 
   <div class="body">
     <div class="sechead">
-      <span class="num">04</span>
+      <span class="num">03</span>
       <div>
-        <div class="title">A production Dockerfile: how Wilms bakes their gateway</div>
-        <div class="lead">The lab's Dockerfile is the minimal version. The real one from the Wilms production repo (condensed below) does more, and every extra line earns its keep. We read it together on screen.</div>
+        <div class="title">A production Dockerfile: how a real gateway image grows</div>
+        <div class="lead">The lab's Dockerfile is the minimal version. This one comes from a production Ignition repo we maintain (condensed and anonymized): it does more, and every extra line earns its keep. We read the real thing together on screen.</div>
       </div>
     </div>
 
@@ -468,7 +507,7 @@ COPY --chown=2003:2003 docker_db_migrations/   <span class="cmd2">/docker_db_mig
 COPY --chown=2003:2003 docker_startup_scripts/ <span class="cmd2">/docker_startup_scripts/</span>
 COPY --chown=2003:2003 modules/ignition/ <span class="cmd2">…/data/var/ignition/modl/</span>
 COPY --chown=2003:2003 modules/jar/      <span class="cmd2">…/lib/core/gateway/</span>
-COPY --chown=2003:2003 pylib/Wilms       <span class="cmd2">…/user-lib/pylib/Wilms</span>
+COPY --chown=2003:2003 pylib/plant       <span class="cmd2">…/user-lib/pylib/plant</span>
 COPY --chown=2003:2003 config/           <span class="cmd2">…/data/config</span>
 COPY --chown=2003:2003 projects/  <span class="cmd2">/usr/local/share/ignition-seed/projects/</span>
 
@@ -490,7 +529,7 @@ ENTRYPOINT ["/usr/local/bin/<span class="hl">entrypoint.sh</span>"]  <span class
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Reference: wilms-ignition-repo · Dockerfile + entrypoint.sh</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Shown on screen: a production Dockerfile + entrypoint.sh</span></div>
 </section>
 
 <!-- 8 · DOCKERIGNORE -->
@@ -502,7 +541,7 @@ ENTRYPOINT ["/usr/local/bin/<span class="hl">entrypoint.sh</span>"]  <span class
 
   <div class="body">
     <div class="sechead">
-      <span class="num">05</span>
+      <span class="num">04</span>
       <div>
         <div class="title"><span class="mono" style="font-size:34px">.dockerignore</span>: keep the build context small and secret-free</div>
         <div class="lead">The build context is the folder tarball Docker hands the builder before running the Dockerfile. This is the image-based analogue of Lab 04's <span class="mono">.deployignore</span>, moved <b>into the tool</b>.</div>
@@ -563,7 +602,7 @@ scripts/
 
   <div class="body">
     <div class="sechead">
-      <span class="num">06</span>
+      <span class="num">05</span>
       <div>
         <div class="title">File-based vs image-based: advantages and disadvantages</div>
         <div class="lead">Same files, same target paths, same end result. Each side pays a different price. Know both lists before you pick one for a customer.</div>
@@ -613,7 +652,7 @@ scripts/
 
   <div class="body">
     <div class="sechead">
-      <span class="num">07</span>
+      <span class="num">06</span>
       <div>
         <div class="title">The five steps of an image-based deploy</div>
         <div class="lead">Build, tag, push, pull, run. The image already contains the state, so the deploy itself is just "recreate the container from the new image".</div>
@@ -645,7 +684,52 @@ scripts/
   </div>
 </section>
 
-<!-- 12 · HOW WILMS RUNS IT -->
+<!-- 12 · THE NORMAL WORKFLOW, END TO END (interactive map) -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Block D · the normal workflow</div>
+  </div>
+
+  <div style="text-align:center">
+    <div style="font-weight:800;font-size:34px;letter-spacing:-.5px;color:#fff">Where the image is built, stored and deployed when Actions runs it</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde;max-width:74ch">The same five steps, drawn end to end. Your laptop only ships <b style="color:#fff">code</b>; the heavy image traffic happens between GitHub and the registry, never through your connection.</p>
+  </div>
+
+  <div class="wmap">
+    <div class="wnode reveal" data-step="1">
+      <div class="ic">💻</div>
+      <h4>Your laptop</h4>
+      <p>Edit a view, commit on a branch, open a PR, <b>merge to main</b>. A few KB of JSON: that's all that leaves your machine.</p>
+    </div>
+    <div class="warr reveal" data-step="2"><div class="a">→</div><div class="t">merge triggers</div></div>
+    <div class="wnode reveal" data-step="2">
+      <div class="ic">⚙️</div>
+      <h4>GitHub · Actions</h4>
+      <p>The merge fires <code>deploy.yml</code>, the same trigger as Lab 04. A hosted runner checks out the commit and runs <b>docker build</b>: the Dockerfile bakes the image.</p>
+    </div>
+    <div class="warr reveal" data-step="3"><div class="a">→</div><div class="t">docker push</div></div>
+    <div class="wnode store reveal" data-step="3">
+      <div class="ic">📦</div>
+      <h4>The registry</h4>
+      <p><b>This is where images live</b>: ghcr.io or a company registry. The ~2 GB upload happens here, datacenter to datacenter, in seconds. Every tag ever pushed stays available.</p>
+    </div>
+    <div class="warr reveal" data-step="4"><div class="a">→</div><div class="t">docker pull</div></div>
+    <div class="wnode plant reveal" data-step="4">
+      <div class="ic">🏭</div>
+      <h4>Runner at the plant</h4>
+      <p>The deploy job runs on the machine that owns the gateway: <b>docker pull</b> the new tag, then <code>docker compose up -d</code> recreates the gateway container. That's the deploy.</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="wmap-step">Follow one change from your keyboard to a running gateway.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next ▶</button>
+  </div>
+</section>
+
+<!-- 13 · A PRODUCTION PIPELINE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -654,10 +738,10 @@ scripts/
 
   <div class="body">
     <div class="sechead">
-      <span class="num">08</span>
+      <span class="num">07</span>
       <div>
-        <div class="title">How the Wilms pipeline builds and deploys the image</div>
-        <div class="lead">The same five steps, as they run in production today. We walk the real pipeline file on screen; here is the shape to hold on to.</div>
+        <div class="title">How a production pipeline builds and deploys the image</div>
+        <div class="lead">The same five steps, as they run in production today in the repo whose Dockerfile you just saw. We walk the real pipeline file on screen; here is the shape to hold on to.</div>
       </div>
     </div>
 
@@ -675,7 +759,7 @@ scripts/
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Reference: wilms-ignition-repo · pipeline + GitVersion</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Shown on screen: a production pipeline + GitVersion</span></div>
 </section>
 
 <!-- 13 · WHAT DIES, WHAT SURVIVES -->
@@ -687,7 +771,7 @@ scripts/
 
   <div class="body">
     <div class="sechead">
-      <span class="num">09</span>
+      <span class="num">08</span>
       <div>
         <div class="title">What dies with the container, and what must live outside it</div>
         <div class="lead">Replacing the container on every deploy is only safe when the data that matters <b>is not in the container</b>. This is the design work the "fresh gateway" disadvantage demands.</div>
@@ -711,7 +795,7 @@ CREATE DATABASE <span class="hl">ignition_prd</span>;
 <span class="cm"># (ignition_loc comes from POSTGRES_DB in compose)</span></pre></div>
         <div class="callout" style="margin-top:16px">
           <div class="lab">Ask this question per data kind</div>
-          <p>For every piece of state on a gateway: does it belong in the <b>image</b> (comes back on deploy), a <b>volume</b> (survives the container) or a <b>database</b> (survives the machine)? Wilms answers it per folder: user uploads get stashed and restored across the re-seed; everything else is image-owned.</p>
+          <p>For every piece of state on a gateway: does it belong in the <b>image</b> (comes back on deploy), a <b>volume</b> (survives the container) or a <b>database</b> (survives the machine)? The production repo answers it per folder: user uploads get stashed and restored across the re-seed; everything else is image-owned.</p>
         </div>
       </div>
     </div>
@@ -732,9 +816,8 @@ CREATE DATABASE <span class="hl">ignition_prd</span>;
     <div class="title" style="max-width:26ch;color:#fff">Next: build the gateway image locally and deploy it by replacing a container</div>
     <ul class="checks" style="max-width:960px;margin-top:22px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do.</b> We walk the real <span class="mono">Dockerfile</span> and <span class="mono">.dockerignore</span>, build with <span class="mono">scripts/build-image.sh</span>, read the layers with <span class="mono">docker history</span>, and run the image <b>with no bind mounts</b>: the proof it's self-contained.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block C.</b> Build and tag the image, bake a config change into it, extend <span class="mono">.dockerignore</span>, and break the build on purpose to see failures land at <b>build time</b>.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block D.</b> Deploy your local image to the dev gateway by recreating the container, ship a second change end-to-end, then roll back by running the previous tag. All local: no registry, no uploads.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Stretch.</b> A first taste of Lab 06: bake a third-party module, an extra JAR or a migrations folder into your image, the way the Wilms Dockerfile does.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block C.</b> Build and tag the image, bake a config change into it, and extend <span class="mono">.dockerignore</span>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block D.</b> Deploy your local image to the dev gateway by <b>typing the deploy commands yourself</b> (no script: the one-liner IS the lesson), ship a second change end-to-end, then roll back by running the previous tag. All local: no registry, no uploads.</span></li>
     </ul>
     <div class="callout" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14)">
       <div class="lab" style="color:var(--peri2)">Everything is in the repo</div>
@@ -748,7 +831,7 @@ CREATE DATABASE <span class="hl">ignition_prd</span>;
 </div>
 
 <div class="hud"><div class="bar" id="bar"></div></div>
-<div class="pager" id="pager">01 / 14</div>
+<div class="pager" id="pager">01 / 15</div>
 <div class="hint" id="hint">↑ ↓ slides · ← → step the animation</div>
 
 <script>
@@ -759,6 +842,7 @@ const bar=document.getElementById('bar');
 const pager=document.getElementById('pager');
 const hint=document.getElementById('hint');
 function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
 function curIndex(){return Math.round(deck.scrollTop/window.innerHeight)}
 function update(){
   const i=curIndex();
@@ -767,7 +851,18 @@ function update(){
   const dark=slides[i]&&slides[i].classList.contains('dark');
   pager.classList.toggle('on-dark',dark);
   hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
 }
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
 deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
 window.addEventListener('keydown',e=>{
   if(e.target.tagName==='BUTTON')return;
@@ -799,6 +894,19 @@ function bindControls(slideEl,ctrl){
   sync();
   return {go,reset:ctrl.reset};
 }
+
+/* ---------- slide 4 (index 3): image / dockerfile / container flow ---------- */
+(function(){
+  const slide=slides[3];
+  const items=[...slide.querySelectorAll('.reveal')];
+  const lead=slide.querySelector('#tri-step');
+  const texts=['Three words, one flow. Step through how they relate.',
+    '<b>The Dockerfile</b> is a committed text file: start FROM a base image, COPY our files in. It describes the image; it never runs.',
+    '<b>docker build</b> executes the recipe: every instruction becomes a read-only <b>layer</b>. The result is the image: a frozen filesystem snapshot plus metadata. <b>inductiveautomation/ignition:8.3.6</b> is one: the whole gateway install, frozen.',
+    '<b>docker run</b> starts a <b>container</b>: the image\'s layers, read-only, plus one thin <b>writable layer</b> for everything the process writes at runtime. This is what every compose up since Lab 02 has done.',
+    'One image can run <b>many containers</b>, each with its own writable layer. Delete a container and only that layer dies: <b>the image is untouched</b>, ready to start a fresh copy. That is why replacing the container can be a deploy.'];
+  controllers.tri={max:4,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
+})();
 
 /* ---------- slide 6 (index 5): layer cache stack ---------- */
 (function(){
@@ -844,6 +952,19 @@ function bindControls(slideEl,ctrl){
   controllers.mvr={max:3,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
 })();
 
+/* ---------- slide 12 (index 11): the normal workflow map (HTML reveal) ---------- */
+(function(){
+  const slide=slides[11];
+  const items=[...slide.querySelectorAll('.reveal')];
+  const lead=slide.querySelector('#wmap-step');
+  const texts=['Follow one change from your keyboard to a running gateway.',
+    '<b>Your laptop.</b> You edit, commit, PR, merge: exactly the GitHub flow from every lab. Only kilobytes of code ever leave your machine.',
+    '<b>GitHub.</b> The merge to main triggers the deploy workflow, and a hosted runner builds the image from the Dockerfile: same trigger as Lab 04, different job contents.',
+    '<b>The registry.</b> The built image is pushed and <b>stored</b> here, under an immutable tag. This is the artifact shelf: every version stays, ready to deploy or roll back to.',
+    '<b>The plant.</b> The deploy job on the gateway\'s own machine pulls the tag and recreates the container. In the assignment you will type exactly these last commands yourself.'];
+  controllers.wmap={max:4,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
+})();
+
 /* ---------- slide 11 (index 10): five-step pipeline (HTML reveal) ---------- */
 (function(){
   const slide=slides[10];
@@ -860,7 +981,7 @@ function bindControls(slideEl,ctrl){
 })();
 
 /* ============ wire controllers to their slides + reset on entry ============ */
-const ctrlBySlide={5:'lstack',9:'mvr',10:'pipe5'};
+const ctrlBySlide={3:'tri',5:'lstack',9:'mvr',10:'pipe5',11:'wmap'};
 const bound={};
 for(const idx in ctrlBySlide){const name=ctrlBySlide[idx];bound[idx]=bindControls(slides[idx],controllers[name]);}
 // reset a slide's animation when you scroll onto it

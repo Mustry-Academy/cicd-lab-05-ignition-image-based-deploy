@@ -151,12 +151,6 @@ Change what the gateway boots with by changing **the artifact**. Pick a module t
    You should see three tags pointing at the **same image ID**: `:sha-<short>`, `:local`, `:dev`. A tag is just a name. The immutable `:sha-…` name is what makes Block D's rollback trivial: every build keeps a name that never moves.
 2. Pick the `:sha-<short>` tag and read its revision label back. Confirm it matches `git rev-parse --short HEAD`.
 
-### Part 4 — Break the build on purpose (5 min)
-
-Introduce a Dockerfile error and read how it fails *at build time, not deploy time*:
-
-- Change a `COPY` source to a path that doesn't exist (e.g. `COPY projects-typo/ ...`) and run `scripts/build-image.sh`. The build fails immediately with a clear "not found in build context" — the bug never reaches a gateway. Revert it.
-
 ## Definition of done
 
 You're finished with Block C when:

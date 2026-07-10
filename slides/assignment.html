@@ -219,7 +219,7 @@ body{
       <div class="pcard p1">
         <div class="pn">BLOCK C · SOLO · 40 MIN</div>
         <h4>Bake a change and prove the image is self-contained</h4>
-        <p>Bake a config change into the image, extend <span class="inlinecode">.dockerignore</span>, tag each build immutably, break the build on purpose.</p>
+        <p>Bake a config change into the image, extend <span class="inlinecode">.dockerignore</span>, and give each build an immutable tag.</p>
         <div class="gate">gate → definition of done in block-c.md</div>
       </div>
       <div class="pcard p2">
@@ -305,7 +305,7 @@ docker run --rm <span class="cmd2">--user root</span> -p 9088:8088 \
   -n demo -- -Dignition.allowunsignedmodules=true</pre></div>
         <div class="goal warn-g" style="margin-top:18px">
           <span class="badge">--user root</span>
-          <p>Drop it and the gateway <b>FAULTs</b> (<span class="inlinecode">unable to create resource dir … /.resources</span>): the baked files are root-owned. <b>File ownership is part of what you bake into an image</b>: remember the <span class="inlinecode">COPY --chown</span> lines in the Wilms Dockerfile.</p>
+          <p>Drop it and the gateway <b>FAULTs</b> (<span class="inlinecode">unable to create resource dir … /.resources</span>): the baked files are root-owned. <b>File ownership is part of what you bake into an image</b>: remember the <span class="inlinecode">COPY --chown</span> lines in the production Dockerfile from the teaching.</p>
         </div>
       </div>
     </div>
@@ -322,12 +322,11 @@ docker run --rm <span class="cmd2">--user root</span> -p 9088:8088 \
   <div class="body">
     <div class="eyebrow">Block C · solo · 40 min · exercises/block-c.md</div>
     <div class="title" style="color:#fff;max-width:26ch">Bake a change into the image and prove it's self-contained</div>
-    <p class="lead">Four parts, in order. Everything runs locally, no GitHub needed.</p>
+    <p class="lead">Three parts, in order. Everything runs locally, no GitHub needed.</p>
     <ul class="checks" style="margin-top:22px;max-width:900px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 1:</b> bake a module-manifest change into the image and read it back (15 min).</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2:</b> extend <span class="mono" style="color:#dbe4f0">.dockerignore</span> and keep <span class="mono" style="color:#dbe4f0">validate.sh</span> green (10 min).</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 3:</b> give one build several tags, and trace it to its commit (10 min).</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 4:</b> break the build on purpose (5 min). Failures move left, to build time.</span></li>
     </ul>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Block C · Parts 1 → 4</span></div>
@@ -400,33 +399,28 @@ docker images cicd-lab-05-ignition
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Parts 2-3 of 4 · 20 min</span></div>
 </section>
 
-<!-- 9 · C PART 4 + DEFINITION OF DONE -->
+<!-- 9 · BLOCK C DEFINITION OF DONE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block C · Part 4 · the gate</div>
+    <div class="stage">Block C · the gate</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">C · PART 4</span><div><div class="title">Break the build on purpose</div><div class="lead">Watch the failure land <b>at build time, not deploy time</b>: the bug never reaches a gateway.</div></div></div>
-    <div class="cols2">
-      <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx">Change a <span class="inlinecode">COPY</span> source to a path that doesn't exist (e.g. <span class="inlinecode">COPY projects-typo/ …</span>) and run <span class="inlinecode">scripts/build-image.sh</span>.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx">Read the error: a clear <i>"not found in build context"</i>, immediately. Compare with Lab 04, where a wrong copy path only surfaces when a deploy misbehaves.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Revert it.</b> Then walk the Block C definition of done →</div></div>
-      </div>
-      <div>
-        <div class="goal good-g" style="margin-top:0">
-          <span class="badge">✅ Done when</span>
-          <p><b>Built + tagged</b> <span class="inlinecode">:sha-&lt;short&gt;</span> &amp; <span class="inlinecode">:local</span> · ran the image <b>with no bind mounts</b> and saw example-project · <b>baked a manifest change</b> and read it back with <span class="inlinecode">--entrypoint cat</span> · can explain <b>layer order as cache busting</b> · extended <span class="inlinecode">.dockerignore</span> with <span class="inlinecode">validate.sh</span> still green · traced an image to its commit via the <b>revision label</b>.</p>
-        </div>
-        <div class="goal warn-g" style="margin-top:14px">
-          <span class="badge">Debrief teaser</span>
-          <p>We pin <span class="inlinecode">8.3.6</span>, not <span class="inlinecode">:latest</span>. Why does an immutable-artifact approach <b>demand</b> a pinned base? And: which of your three tags would you never deploy by name, and why?</p>
-        </div>
-      </div>
+    <div class="sechead"><span class="num">C · DONE?</span><div><div class="title">Block C definition of done</div><div class="lead">Walk the list in <span class="inlinecode">exercises/block-c.md</span> before you move on: Block D deploys the image you just built.</div></div></div>
+    <ul class="checks" style="max-width:960px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Built + tagged</b> <span class="inlinecode">:sha-&lt;short&gt;</span> &amp; <span class="inlinecode">:local</span>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Ran the image <b>with no bind mounts</b> and saw example-project load.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Baked a manifest change</b> and read it back with <span class="inlinecode">--entrypoint cat</span>, without booting a gateway.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Can explain <b>layer order as cache busting</b>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Extended <span class="inlinecode">.dockerignore</span> with <span class="inlinecode">validate.sh</span> still green.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Traced an image to its commit via the <b>revision label</b>.</span></li>
+    </ul>
+    <div class="goal warn-g">
+      <span class="badge">Debrief teaser</span>
+      <p>We pin <span class="inlinecode">8.3.6</span>, not <span class="inlinecode">:latest</span>. Why does an immutable-artifact approach <b>demand</b> a pinned base? And: which of your three tags would you never deploy by name, and why?</p>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 4 of 4 · done? → Block D</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → Block D</span></div>
 </section>
 
 <!-- 10 · BLOCK D DIVIDER -->
@@ -448,34 +442,73 @@ docker images cicd-lab-05-ignition
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Block D · Parts 1 → 3</span></div>
 </section>
 
-<!-- 11 · D PART 1 · DEPLOY TO DEV -->
+<!-- 11 · WHY LOCAL, NOT GITHUB -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Block D · read first</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">D · READ FIRST</span><div><div class="title">Why we deploy locally today, and what GitHub Actions would do instead</div><div class="lead">In a real setup this block is automated by <b>the same Actions you built in Lab 04</b>. Today you type the workflow's commands yourself, and that is the point.</div></div></div>
+    <div class="cols2">
+      <ul class="checks">
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Same triggers as Lab 04.</b> A merge to <span class="inlinecode">main</span> would fire <span class="inlinecode">deploy.yml</span>, a tag would fire <span class="inlinecode">release.yml</span>. Only the steps <b>inside</b> the jobs change: build + push + pull + recreate, instead of copy + scan.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Why not do that now?</b> The gateway image is <b>~2 GB</b>. Between GitHub's datacenter and a registry that upload is seconds; from ten course laptops, it's your whole hour. The transport isn't the lesson.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>So today, you are the pipeline.</b> Every command in Parts 1 to 3 is a line the workflow would run. Type them once by hand and the automation never feels like magic again.</span></li>
+      </ul>
+      <div>
+        <div class="code"><pre><span class="cm"># what deploy.yml's deploy job would run
+# (on the runner that owns the gateway):</span>
+docker pull ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt;
+IGNITION_DEV_IMAGE=ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt; \
+  docker compose up -d ignition-dev
+
+<span class="cm"># what YOU run today (no registry, so no pull):</span>
+IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-dev</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Same deploy</span>
+          <p>The only line missing locally is <span class="inlinecode">docker pull</span>: your image store already holds the build. Everything else is <b>identical</b> to what the workflow runs.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Same Actions, same commands, no transport</span></div>
+</section>
+
+<!-- 12 · D PART 1 · DEPLOY TO DEV -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
     <div class="stage">Block D · Part 1</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">D · PART 1</span><div><div class="title">Deploy your image to the dev gateway</div><div class="lead">Recreate the dev container from your local build. No <span class="inlinecode">docker cp</span>, no scan call: the container is <b>replaced</b>.</div></div></div>
+    <div class="sechead"><span class="num phase2">D · PART 1</span><div><div class="title">Deploy your image to the dev gateway, command by command</div><div class="lead">No script today: you type the deploy yourself so you see there's nothing to it. No <span class="inlinecode">docker cp</span>, no scan call: the container is <b>replaced</b>.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx">Confirm dev is on the <b>base</b> image (an empty gateway).</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx">Recreate dev from your local build, watching it recreate the container and waiting for <b>RUNNING</b>.</div></div>
-        <div class="step"><div class="ix p">3</div><div class="tx">Verify at <span class="inlinecode">http://localhost:8089</span>: <b>example-project is there</b>, plus the manifest change you baked in Block C.</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx">Inspect again: which image does dev run now?</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">The deploy is <b>one command</b>: point the compose variable at your image and bring the service up. Compose sees a new image and recreates the container.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx">Wait for the gateway to come back: poll <span class="inlinecode">/StatusPing</span> until it says <b>RUNNING</b> (a fresh-image boot re-commissions, so give it a few minutes).</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Verify at <span class="inlinecode">http://localhost:8089</span>: <b>example-project is there</b>, plus the manifest change you baked in Block C. Then inspect: which image does dev run now?</div></div>
         <div class="step"><div class="ix p">5</div><div class="tx">Note what <b>persisted</b>: the historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: before, base image</span>
+        <div class="code"><pre><span class="cm"># 1: before, the base image</span>
 docker inspect -f '{{.Config.Image}}' lab05-ignition-dev
 
-<span class="cm"># 2: the deploy (recreate, wait)</span>
-scripts/deploy-image.sh dev cicd-lab-05-ignition:local
+<span class="cm"># 2: THE deploy</span>
+IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-dev
+
+<span class="cm"># 3: wait for RUNNING</span>
+curl -s localhost:8089/StatusPing
+<span class="cm"># repeat until it prints RUNNING</span>
 
 <span class="cm"># 4: after, your image</span>
 docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Under the hood</span>
-          <p>The script sets <span class="inlinecode">IGNITION_DEV_IMAGE</span> and runs <span class="inlinecode">docker compose up -d ignition-dev</span>: compose sees a new image and <b>recreates the container</b>. That's the whole deploy. In production the only extra ingredient is a registry between build and run.</p>
+          <p><span class="inlinecode">docker-compose.yaml</span> interpolates <span class="inlinecode">IGNITION_DEV_IMAGE</span> into the dev service's <span class="inlinecode">image:</span>. New image → compose recreates the container. That's the whole deploy; in production the only extra ingredient is a <span class="inlinecode">docker pull</span> first.</p>
         </div>
       </div>
     </div>
@@ -496,7 +529,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
         <div class="step"><div class="ix p">1</div><div class="tx">Note the current build's tag: <span class="inlinecode">docker images cicd-lab-05-ignition</span>. Write down the <span class="inlinecode">:sha-&lt;short&gt;</span>: this is the version you'll roll back <b>to</b>.</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx">Edit a Perspective view under <span class="inlinecode">projects/example-project/…/views/</span>: make it visibly different (a title text works well).</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Commit the change</b> on a feature branch and merge it to <span class="inlinecode">main</span> (GitHub flow, like every lab). The commit is what gives the next build a <b>new</b> <span class="inlinecode">:sha</span> tag.</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx">Rebuild + redeploy: <span class="inlinecode">scripts/build-image.sh</span>, then <span class="inlinecode">scripts/deploy-image.sh dev cicd-lab-05-ignition:local</span>.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Rebuild, then redeploy with the same one-liner from Part 1: <span class="inlinecode">scripts/build-image.sh</span>, then compose up with the new build.</div></div>
         <div class="step"><div class="ix p">5</div><div class="tx">Verify at :8089: your view change is live. <span class="inlinecode">docker images</span> now shows <b>two</b> <span class="inlinecode">:sha-…</span> tags: two deployable versions, both still on your machine.</div></div>
       </div>
       <div>
@@ -512,7 +545,8 @@ git checkout main &amp;&amp; git merge feature/tweak-view
 
 <span class="cm"># 4: rebuild + redeploy</span>
 scripts/build-image.sh
-scripts/deploy-image.sh dev cicd-lab-05-ignition:local</pre></div>
+IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-dev</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">This is the pipeline</span>
           <p>Steps 2-5 are exactly what a deploy workflow automates on merge: <b>build → tag → run</b>. You're doing the pipeline's job by hand once, so the automation never feels like magic.</p>
@@ -534,14 +568,14 @@ scripts/deploy-image.sh dev cicd-lab-05-ignition:local</pre></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx">Pretend Part 2's change broke something on dev. You need the previous version back, <b>now</b>.</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx">Deploy the <b>old</b> <span class="inlinecode">:sha-&lt;short&gt;</span> tag you wrote down in Part 2 (see command). The old image never went away; it's a name in your image store.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">Deploy the <b>old</b> <span class="inlinecode">:sha-&lt;short&gt;</span> tag you wrote down in Part 2: the same one-liner, older name. The old image never went away; it's a name in your image store.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Verify at :8089: the view is back to its previous state.</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx">Count the irreversible steps you just took. (It's zero: both versions still exist, and you can flip between them all afternoon.)</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 2: rollback = deploy an older immutable tag</span>
-scripts/deploy-image.sh dev \
-  cicd-lab-05-ignition:sha-<span class="cmd2">&lt;the-old-short-sha&gt;</span>
+        <div class="code"><pre><span class="cm"># 2: rollback = the same deploy, older tag</span>
+IGNITION_DEV_IMAGE=cicd-lab-05-ignition:sha-<span class="cmd2">&lt;old-sha&gt;</span> \
+  docker compose up -d ignition-dev
 
 <span class="cm"># 3: confirm what dev runs now</span>
 docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
@@ -576,77 +610,10 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
       <p>Each deploy gave dev a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, experienced first-hand.</p>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → stretch, or debrief</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → debrief</span></div>
 </section>
 
-<!-- 15 · STRETCH · BLOCK C -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Optional stretch</div>
-  </div>
-  <div class="body">
-    <div class="sechead"><span class="num warm">OPTIONAL · 1</span><div><div class="title">Stretch: go deeper on the image itself</div><div class="lead">Finished early? Three ways to sharpen the Block C skills.</div></div></div>
-    <div class="cols2">
-      <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>Shrink the context.</b> Build with <span class="inlinecode">--progress=plain</span> and watch the <i>"transferring context"</i> size. Add more to <span class="inlinecode">.dockerignore</span> and watch it drop.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Layer forensics.</b> Run <span class="inlinecode">docker history --no-trunc</span>: which layer is largest, base, modules, or your project? What would you do differently if the project were <b>500 MB of assets</b>?</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>CI build check.</b> If you have a fork with Actions enabled: add a job to <span class="inlinecode">ci.yml</span> that runs <span class="inlinecode">docker build</span> <b>without pushing</b>. A broken Dockerfile now fails the PR: free, because nothing 2 GB ever leaves the runner.</div></div>
-      </div>
-      <div>
-        <div class="code"><pre>docker build --progress=plain . 2&gt;&amp;1 | \
-  grep "transferring context"
-
-docker history --no-trunc \
-  cicd-lab-05-ignition:local</pre></div>
-        <div class="goal" style="margin-top:18px">
-          <span class="badge">No single answer</span>
-          <p>The 500 MB question has no right answer: <b>bake vs mount vs pull-at-runtime is the trade-off itself</b>. Bring your reasoning to the debrief.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch 1 of 2 · optional</span></div>
-</section>
-
-<!-- 16 · STRETCH · LAB 06 PREVIEW -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Optional stretch</div>
-  </div>
-  <div class="body">
-    <div class="sechead"><span class="num warm">OPTIONAL · 2</span><div><div class="title">Stretch: bake more kinds of cargo, like the Wilms image does</div><div class="lead">A first taste of Lab 06. The Wilms Dockerfile bakes modules, JAR libraries and a db-migrations folder. Try adding one of each to <b>your</b> image; tomorrow we do them properly.</div></div></div>
-    <div class="cols2">
-      <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>A third-party module.</b> There are unused <span class="inlinecode">.modl</span> files in <span class="inlinecode">third-party-modules/</span>. Enable one in <span class="inlinecode">services/modules.json</span>, rebuild, deploy to dev and find it under <i>Config → Modules</i>.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>A migrations folder.</b> Create <span class="inlinecode">db-migrations/0001_create_downtime_log.up.sql</span> with a simple <span class="inlinecode">CREATE TABLE</span>, add a <span class="inlinecode">COPY db-migrations/ /db-migrations/</span> layer, rebuild, and read the file back out of the image. Nothing runs it yet: Lab 06 wires that up.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>An extra JAR.</b> Add a <span class="inlinecode">COPY</span> layer for a JAR the way Wilms ships its RabbitMQ client into <span class="inlinecode">lib/core/gateway/</span>. Where in the layer order does it belong, and why?</div></div>
-      </div>
-      <div>
-        <div class="code"><pre><span class="cm"># step 2: cargo the image carries but nothing runs yet</span>
-mkdir -p db-migrations
-cat &gt; db-migrations/0001_create_downtime_log.up.sql &lt;&lt;'EOF'
-CREATE TABLE downtime_log (
-  id BIGSERIAL PRIMARY KEY,
-  reason TEXT, minutes INT
-);
-EOF
-<span class="cm"># add to the Dockerfile, rebuild, then:</span>
-docker run --rm --entrypoint cat \
-  cicd-lab-05-ignition:local \
-  /db-migrations/0001_create_downtime_log.up.sql</pre></div>
-        <div class="goal" style="margin-top:18px">
-          <span class="badge">Tomorrow</span>
-          <p>Lab 06 teaches all three properly: <b>secrets, database migrations, JAR files and third-party modules</b>, with the Wilms and Proferro repos as the working references.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch 2 of 2 · optional</span></div>
-</section>
-
-<!-- 17 · DONE -->
+<!-- 15 · DONE -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -672,7 +639,7 @@ docker run --rm --entrypoint cat \
 </div>
 
 <div class="hud"><div class="bar" id="bar"></div></div>
-<div class="pager" id="pager">01 / 17</div>
+<div class="pager" id="pager">01 / 16</div>
 <div class="hint" id="hint">↑ ↓ / scroll to navigate</div>
 
 <script>
@@ -682,6 +649,7 @@ const bar=document.getElementById('bar');
 const pager=document.getElementById('pager');
 const hint=document.getElementById('hint');
 function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
 function update(){
   const i=Math.round(deck.scrollTop/window.innerHeight);
   bar.style.width=((i)/(slides.length-1)*100)+'%';
@@ -689,7 +657,18 @@ function update(){
   const dark=slides[i]&&slides[i].classList.contains('dark');
   pager.classList.toggle('on-dark',dark);
   hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
 }
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
 deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
 window.addEventListener('keydown',e=>{
   const i=Math.round(deck.scrollTop/window.innerHeight);
