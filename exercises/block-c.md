@@ -30,7 +30,7 @@ You'll need Docker with Compose v2 and ~8 GB free RAM. No GitHub setup yet — t
 
 In Lab 04 the gateway was a long-lived, *mutable* thing: you copied files into its `data/` directory and asked it to scan. In image-based deploy the gateway is *immutable*: the deployable state is frozen into an image, and you deploy by replacing the whole container.
 
-The thing Lab 04 couldn't do — **ship a module change** — falls out for free here. A project scan can hot-reload views and config, but enabling/disabling a module needs a gateway restart. When the module manifest is a *layer in the image*, "restart with the new module" is just "run the new image."
+Both approaches deliver the same files to the same paths and achieve the same result. What changes is the trade-offs: file-based keeps the gateway alive (no restarts, fast inner loop) but you own the copy-and-delete logic; image-based gives you a frozen, versioned artifact with no copy scripts, but every deploy is a fresh gateway boot. This block is about experiencing the image side of that trade.
 
 ### Walk the Dockerfile
 
@@ -120,9 +120,9 @@ Together, build and dissect the image.
 
 ## You do (40 min)
 
-### Part 1 — Bake in a module change (15 min)
+### Part 1 — Bake a module-manifest change into the image (15 min)
 
-This is the move Lab 04 *couldn't* do with a scan. Pick a module that's present in `third-party-modules/` but not yet enabled, and turn it on **through the image**.
+Change what the gateway boots with by changing **the artifact**. Pick a module that's present in `third-party-modules/` but not yet enabled, and turn it on **through the image**.
 
 1. Open [`services/modules.json`](../services/modules.json) and the compose `GATEWAY_MODULES_ENABLED` list to see what's available.
 2. Enable one more module (edit `services/modules.json`, or confirm it's in the enabled list).
@@ -132,7 +132,7 @@ This is the move Lab 04 *couldn't* do with a scan. Pick a module that's present 
    ```bash
    docker run --rm --entrypoint cat cicd-lab-05-ignition:local /usr/local/bin/ignition/data/modules.json
    ```
-   The change is in the image's layer. In Lab 04, getting this onto a running gateway would have needed a restart, not a scan — here the restart *is* the deploy.
+   The change is in the image's layer: it is now part of the artifact. Every gateway that ever runs this image boots with it. No copy step to script, no file to forget.
 
 ### Part 2 — Extend `.dockerignore` and verify (10 min)
 
@@ -141,14 +141,14 @@ This is the move Lab 04 *couldn't* do with a scan. Pick a module that's present 
 3. Add a pattern to `.dockerignore` (e.g. `*.local`) so it's excluded. Re-run `scripts/validate.sh` — the `.dockerignore` sanity check should still pass (your new pattern doesn't remove the required ones).
 4. Delete `NOTES.local` when done.
 
-### Part 3 — Tag like CWe-does, and trace it (10 min)
+### Part 3 — Give one build several tags, and trace it (10 min)
 
-1. Build with an extra moving tag, the way `deploy.yml` tags `:dev`:
+1. Build with an extra moving tag, the way a pipeline would tag `:dev`:
    ```bash
    scripts/build-image.sh --tag dev
    docker images cicd-lab-05-ignition
    ```
-   You should see three tags pointing at the **same image ID**: `:sha-<short>`, `:local`, `:dev`. Moving tags (`:dev`) and immutable tags (`:sha-…`) coexisting is the core of the deploy/promote story in Block D.
+   You should see three tags pointing at the **same image ID**: `:sha-<short>`, `:local`, `:dev`. A tag is just a name. The immutable `:sha-…` name is what makes Block D's rollback trivial: every build keeps a name that never moves.
 2. Pick the `:sha-<short>` tag and read its revision label back. Confirm it matches `git rev-parse --short HEAD`.
 
 ### Part 4 — Break the build on purpose (5 min)

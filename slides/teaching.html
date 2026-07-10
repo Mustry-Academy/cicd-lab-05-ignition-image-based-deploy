@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lab 05: Teaching: Image-based deployment for Ignition</title>
+<title>Lab 05 Teaching: Deploying Ignition as a custom Docker image</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -79,7 +79,7 @@ body{
 
 /* ---- cover ---- */
 .cover{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
-.cover .big{font-weight:800;font-size:58px;line-height:1.02;letter-spacing:-1.6px;color:#fff;max-width:17ch}
+.cover .big{font-weight:800;font-size:54px;line-height:1.04;letter-spacing:-1.4px;color:#fff;max-width:20ch}
 .cover .big em{font-style:normal;color:var(--peri2)}
 .cover .sub{font-size:17px;color:#aebbcd;max-width:64ch;line-height:1.55;margin-top:18px}
 
@@ -88,6 +88,7 @@ body{
 .cols{display:grid;gap:22px}
 .split{display:grid;grid-template-columns:1.15fr 1fr;gap:28px;align-items:start}
 .cols2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px}
 
 /* bullets */
 .checks{display:flex;flex-direction:column;gap:13px;margin-top:6px}
@@ -113,25 +114,29 @@ body{
 .code .cmd2{color:var(--peri2)}
 .code .hl{color:var(--teal-l)}
 
-/* small panel with heading (like lab 1 .does) */
+/* small panel with heading */
 .does{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
 .does .hd{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:12px}
 .does ul{display:flex;flex-direction:column;gap:9px}
 .does li{list-style:none;display:flex;gap:11px;align-items:flex-start;font-size:14px;color:var(--txt);line-height:1.4}
 .does li .d{flex:none;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-top:7px}
+.does li span b{font-weight:700}
+.does code{font-family:'IBM Plex Mono';font-size:12px;color:var(--blue-d)}
 
-/* gap cards (three problems from lab 04) */
-.gaps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
-.gapcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-.gapcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--warn)}
-.gapcard .pn{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);font-weight:600;letter-spacing:1px}
-.gapcard h4{font-size:17px;font-weight:800;letter-spacing:-.3px;margin:8px 0 4px}
-.gapcard p{font-size:13px;color:var(--txt-dim);line-height:1.5;margin-top:6px}
-.gapcard p code{font-family:'IBM Plex Mono';font-size:12px;color:var(--blue-d)}
+/* definition cards (image / container / dockerfile) */
+.defs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
+.defcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.defcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--blue)}
+.defcard.c2:before{background:var(--teal)}
+.defcard.c3:before{background:var(--peri)}
+.defcard .pn{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);font-weight:600;letter-spacing:1px}
+.defcard h4{font-size:17px;font-weight:800;letter-spacing:-.3px;margin:8px 0 4px}
+.defcard p{font-size:13px;color:var(--txt-dim);line-height:1.5;margin-top:6px}
+.defcard p code{font-family:'IBM Plex Mono';font-size:12px;color:var(--blue-d)}
 
 /* section divider */
 .divider{flex:1;display:flex;flex-direction:column;justify-content:center}
-.divider .q{font-weight:800;font-size:52px;line-height:1.05;letter-spacing:-1.4px;color:#fff;max-width:20ch}
+.divider .q{font-weight:800;font-size:52px;line-height:1.05;letter-spacing:-1.4px;color:#fff;max-width:22ch}
 .divider .q em{font-style:normal;color:var(--peri2)}
 .divider .sub2{font-size:18px;color:#aebbcd;margin-top:18px;max-width:60ch;line-height:1.5}
 
@@ -149,7 +154,7 @@ body{
 .btn.primary:hover:not(:disabled){background:var(--blue-d)}
 .btn:disabled{opacity:.32;cursor:default}
 
-/* ---- mutate vs replace panels ---- */
+/* ---- advantages/disadvantages panels ---- */
 .mvr{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:14px}
 .mvr .panelbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px}
 .mvr .panelbox .ph{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -159,7 +164,9 @@ body{
 .mvr .panelbox ul{display:flex;flex-direction:column;gap:8px}
 .mvr .panelbox li{list-style:none;display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--txt-dim);line-height:1.45}
 .mvr .panelbox li b{color:var(--txt)}
-.mvr .panelbox li .d{flex:none;width:7px;height:7px;border-radius:50%;margin-top:6px}
+.mvr .panelbox li .pm{flex:none;font-family:'IBM Plex Mono';font-size:12px;font-weight:600;width:18px;height:18px;border-radius:6px;display:grid;place-items:center;margin-top:2px}
+.mvr .panelbox li .pm.plus{background:var(--good-soft);color:var(--good)}
+.mvr .panelbox li .pm.minus{background:var(--warn-soft);color:var(--warn)}
 .mvr .panelbox code{font-family:'IBM Plex Mono';font-size:12px;color:var(--blue-d)}
 
 /* ---- image layer stack (dark slide) ---- */
@@ -192,18 +199,6 @@ body{
 .pipe5 .pbox.selfhosted{border-top-color:var(--warn)}
 .pipe5 .parr{display:grid;place-items:center;font-size:22px;color:var(--txt-faint);font-family:'IBM Plex Mono'}
 
-/* ---- topology / flow map ---- */
-.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center;margin-top:16px}
-.flow .fbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
-.flow .fbox .fh{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-.flow .fbox .fh .dot{width:9px;height:9px;border-radius:50%}
-.flow .fbox .fh h4{font-size:14.5px;font-weight:800;letter-spacing:-.2px}
-.flow .fbox p{font-size:12.5px;color:var(--txt-dim);line-height:1.5}
-.flow .fbox code{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--blue-d)}
-.flow .farr{text-align:center;font-family:'IBM Plex Mono';color:var(--txt-faint)}
-.flow .farr .a{font-size:22px;color:var(--blue)}
-.flow .farr .t{font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;font-weight:600}
-
 /* ---- comparison table ---- */
 .tbl{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
 .tbl th,.tbl td{padding:10px 16px;text-align:left;font-size:13px;line-height:1.4;border-bottom:1px solid var(--line)}
@@ -213,18 +208,6 @@ body{
 .tbl td{color:var(--txt-dim)}
 .tbl td b{color:var(--txt)}
 .tbl code{font-family:'IBM Plex Mono';font-size:12px;color:var(--blue-d)}
-.tbl .fb{color:var(--warn);font-weight:700}
-.tbl .ib{color:var(--good);font-weight:700}
-
-/* tag table rows */
-.tagrow{display:grid;grid-template-columns:190px 110px 1fr;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line2)}
-.tagrow:last-child{border-bottom:none}
-.tagrow code{font-family:'IBM Plex Mono';font-size:14px;font-weight:600;color:var(--blue)}
-.tagrow .kind{font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;padding:4px 9px;border-radius:6px;text-align:center}
-.tagrow .kind.imm{background:var(--good-soft);color:var(--good)}
-.tagrow .kind.mov{background:var(--warn-soft);color:var(--warn)}
-.tagrow span.desc{font-size:13px;color:var(--txt-dim);line-height:1.4}
-.tagrow span.desc b{color:var(--txt)}
 
 .refs{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;padding-top:18px}
 .refs .ref{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--txt-dim);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 11px}
@@ -257,14 +240,14 @@ body{
 
   <div class="cover">
     <div class="eyebrow">Teaching · ±60 min</div>
-    <div class="big">Bake the gateway into an <em>image</em>.</div>
-    <div class="sub">This morning you shipped <em style="color:#fff;font-style:normal">files</em> into a running gateway. Now the deployable state (project, config, <em style="color:#fff;font-style:normal">and modules</em>) becomes an immutable, versioned Docker image. You deploy by replacing the container, promote by re-tagging the exact image you tested, and roll back by running a previous tag.</div>
+    <div class="big">Deploying Ignition as a custom Docker <em>image</em></div>
+    <div class="sub">This morning you shipped files into a running gateway. This lab is a deliberate sidestep: there is a second way to deploy the exact same files, by baking them into a custom Docker image and replacing the container. To understand it you first need three words defined properly: <em style="color:#fff;font-style:normal">image</em>, <em style="color:#fff;font-style:normal">Dockerfile</em> and <em style="color:#fff;font-style:normal">container</em>. Then we walk a real production repo that deploys Ignition this way, and you build your own gateway image locally.</div>
   </div>
 
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 05: Image-based deploy</span></div>
 </section>
 
-<!-- 2 · WHERE LAB 04 LEFT US -->
+<!-- 2 · WHERE LAB 04 ENDS AND THIS LAB GOES -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -275,103 +258,100 @@ body{
     <div class="sechead">
       <span class="num">01</span>
       <div>
-        <div class="title">Lab 04 left an itch</div>
-        <div class="lead">File-based deploy (<span class="mono">docker cp</span> + a hot scan into a <b>running</b> gateway) is a great inner loop. But three things it fundamentally <b>cannot</b> do:</div>
+        <div class="title">Where Lab 04 ends, and what this lab adds</div>
+        <div class="lead">Your file-based pipeline works: checkout, prune, wipe + copy, scan, verify. Nothing is wrong with it. This lab shows the <b>other</b> way teams deploy the same files.</div>
       </div>
     </div>
 
-    <div class="gaps">
-      <div class="gapcard">
-        <div class="pn">GAP 1</div>
-        <h4>Modules can't ship</h4>
-        <p>A project scan hot-reloads views, scripts and config, but <b>enabling or disabling a module needs a gateway restart</b>. The scan API simply won't apply it.</p>
+    <div class="cols2">
+      <div class="does">
+        <div class="hd">What you have after Lab 04</div>
+        <ul>
+          <li><span class="d"></span><span><b>A working deploy pipeline:</b> a merge to <code>main</code> ships files into the <b>running</b> dev gateway; a tag ships prod. Rollback: re-run the pipeline on an older tag.</span></li>
+          <li><span class="d"></span><span><b>A verified deploy:</b> the pipeline polls the gateway after the scan, so a broken deploy fails the run, loudly.</span></li>
+          <li><span class="d"></span><span><b>Everything is files in Git:</b> projects, gateway config, and the deploy scripts themselves.</span></li>
+        </ul>
       </div>
-      <div class="gapcard">
-        <div class="pn">GAP 2</div>
-        <h4>No versioned artifact</h4>
-        <p>You deployed <i>files</i>. There's nothing to point at, audit, or roll back to: rollback means re-copying old files and re-scanning, with a partial-state window.</p>
-      </div>
-      <div class="gapcard">
-        <div class="pn">GAP 3</div>
-        <h4>Promotion re-copies</h4>
-        <p>dev → prod meant re-shipping files per environment. Nothing <i>guarantees</i> prod received the exact bytes dev tested.</p>
+      <div class="does">
+        <div class="hd">What this lab adds</div>
+        <ul>
+          <li><span class="d"></span><span><b>The vocabulary:</b> what an image, a Dockerfile and a container actually are, so "deploy an image" stops being magic.</span></li>
+          <li><span class="d"></span><span><b>A real production reference:</b> the Wilms Ignition repo, which deploys the gateway as a custom image every day.</span></li>
+          <li><span class="d"></span><span><b>Your own gateway image:</b> you build it locally in the assignment and deploy it by replacing a container. No registry, no uploads.</span></li>
+        </ul>
       </div>
     </div>
 
     <div class="callout">
-      <div class="lab" style="color:var(--blue)">Today</div>
-      <p>The deployable state becomes an <b>immutable image</b>. And to be clear: this is not a replacement. Most mature Ignition shops use <b>both</b>. File-based for the daily inner loop, image-based for releases. In this lab you'll live in both worlds at once: <code>local</code> stays file-based, <code>dev</code>/<code>prod</code> go image-based.</p>
+      <div class="lab" style="color:var(--blue)">This is a sidestep, not a replacement</div>
+      <p>Both approaches deploy the same files to the same paths and <b>achieve the same result</b>. File-based mutates a long-lived gateway; image-based replaces a disposable one. Once a pipeline is up and running, you barely notice which one you are on. Today is about understanding the second approach well enough to <b>choose deliberately</b>.</p>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>File-based + image-based: the two halves</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Same files, second delivery mechanism</span></div>
 </section>
 
-<!-- 3 · DIVIDER · WHAT IF THE GATEWAY WAS THE ARTIFACT -->
+<!-- 3 · DIVIDER · BLOCK C -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
-    <div class="stage on-dark">Block C · the image</div>
+    <div class="stage on-dark">Block C · Docker fundamentals</div>
   </div>
   <div class="divider">
-    <div class="eyebrow">Block C · Build the gateway image</div>
-    <div class="q">What if the gateway itself was the <em>artifact</em>?</div>
-    <div class="sub2">Freeze project + config + modules into Docker layers. The container becomes disposable; the <span class="mono" style="color:#dbe4f0">Dockerfile</span> becomes the deploy spec.</div>
+    <div class="eyebrow">Block C · Images, Dockerfiles and containers</div>
+    <div class="q">What is an image, a Dockerfile, a <em>container</em>?</div>
+    <div class="sub2">You have been running containers since Lab 02. Now we define the three words precisely, because image-based deployment only makes sense once you know what an image actually is.</div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Dockerfile → layers → tags → provenance</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>image → Dockerfile → container → layers</span></div>
 </section>
 
-<!-- 4 · MENTAL MODEL: MUTATE VS REPLACE (reveal) -->
+<!-- 4 · THE THREE WORDS, DEFINED -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block C · mental model</div>
+    <div class="stage">Block C · definitions</div>
   </div>
 
   <div class="body">
     <div class="sechead">
       <span class="num">02</span>
       <div>
-        <div class="title">Mutate in place vs. replace the box</div>
-        <div class="lead">Same files, same target paths. What changes is <b>when</b> they arrive and <b>what mutates</b>.</div>
+        <div class="title">Image, Dockerfile, container: the three words defined</div>
+        <div class="lead">Three different things, constantly mixed up in conversation. Get these straight and everything else in this lab follows.</div>
       </div>
     </div>
 
-    <div class="mvr">
-      <div class="panelbox reveal" data-step="1">
-        <div class="ph"><span class="dot" style="background:var(--warn)"></span><h4>File-based (Lab 04)</h4><span class="sub">mutable gateway</span></div>
-        <ul>
-          <li><span class="d" style="background:var(--warn)"></span><span>The gateway is a <b>long-lived, mutable</b> container.</span></li>
-          <li><span class="d" style="background:var(--warn)"></span><span>Deploy = <code>docker cp</code> files into <code>data/projects</code> &amp; <code>data/config</code> of a <b>running</b> gateway…</span></li>
-          <li><span class="d" style="background:var(--warn)"></span><span>…then POST the <b>scan endpoints</b> so it picks them up hot.</span></li>
-          <li><span class="d" style="background:var(--warn)"></span><span>Files arrive <b>at deploy time</b>. The gateway mutates in place.</span></li>
-        </ul>
+    <div class="defs">
+      <div class="defcard">
+        <div class="pn">THE ARTIFACT</div>
+        <h4>Image</h4>
+        <p>A <b>read-only snapshot of a filesystem</b>, plus metadata: which command to start, which ports to expose, labels. Stored as a stack of <b>layers</b>.</p>
+        <p>It does not run. It is a frozen template, like an installer or a golden VM snapshot. <code>inductiveautomation/ignition:8.3.6</code> is an image: the whole gateway install, frozen.</p>
       </div>
-      <div class="panelbox reveal" data-step="2">
-        <div class="ph"><span class="dot" style="background:var(--good)"></span><h4>Image-based (Lab 05)</h4><span class="sub">immutable artifact</span></div>
-        <ul>
-          <li><span class="d" style="background:var(--good)"></span><span>The deployable state is <b>frozen into image layers</b> at build time.</span></li>
-          <li><span class="d" style="background:var(--good)"></span><span>Deploy = <code>docker pull</code> + <b>recreate the container</b>. No copy, no scan API.</span></li>
-          <li><span class="d" style="background:var(--good)"></span><span>Files are present <b>from the first boot</b>: Ignition scans them at startup.</span></li>
-          <li><span class="d" style="background:var(--good)"></span><span>Nothing mutates. You <b>replace the whole box</b>.</span></li>
-        </ul>
+      <div class="defcard c2">
+        <div class="pn">THE RECIPE</div>
+        <h4>Dockerfile</h4>
+        <p>A <b>text file that describes how to build an image</b>: start FROM a base image, COPY files in, RUN commands, set the USER and ENTRYPOINT.</p>
+        <p>Every instruction produces one layer. The Dockerfile is committed to Git, so the image is <b>reproducible from the repo</b>.</p>
+      </div>
+      <div class="defcard c3">
+        <div class="pn">THE RUNNING COPY</div>
+        <h4>Container</h4>
+        <p>A <b>running instance of an image</b>: the image's read-only layers plus one thin <b>writable layer</b> on top for everything the process writes at runtime.</p>
+        <p>Delete the container and the writable layer is gone; <b>the image is untouched</b>. Start it again and you get a fresh copy. One image can run as many containers.</p>
       </div>
     </div>
 
-    <div class="callout reveal" data-step="3" style="border-left:5px solid var(--blue)">
-      <div class="lab" style="color:var(--blue)">The free lunch</div>
-      <p>The thing Lab 04 <b>couldn't</b> do, ship a module change, falls out for free. A module change needs a restart, and here <b>the restart <i>is</i> the deploy</b>: "run the new image" and the new module manifest boots with it.</p>
+    <div class="callout">
+      <div class="lab" style="color:var(--blue)">You already live this daily</div>
+      <p>Every <code>docker compose up</code> since Lab 02 pulled the stock Ignition <b>image</b> and started a <b>container</b> from it. The only new move today: writing our own <b>Dockerfile</b> so the image contains <b>our</b> projects and config, not just an empty gateway.</p>
     </div>
   </div>
 
-  <div class="controls" style="border-top-color:var(--line)">
-    <span class="lead-step" id="mvr-step" style="color:var(--txt-dim)">Two deploy philosophies, side by side.</span>
-    <button class="btn" data-act="back">◀ Back</button>
-    <button class="btn primary" data-act="next">Next ▶</button>
-  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>image = frozen · container = running · Dockerfile = how the image is made</span></div>
 </section>
 
-<!-- 5 · DOCKERFILE ANATOMY -->
+<!-- 5 · THE LAB'S DOCKERFILE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -382,8 +362,8 @@ body{
     <div class="sechead">
       <span class="num">03</span>
       <div>
-        <div class="title">The whole Dockerfile is four <span class="mono" style="font-size:34px">COPY</span> lines</div>
-        <div class="lead">This is the lab's actual <span class="mono">Dockerfile</span>. Everything else is pinning and provenance.</div>
+        <div class="title">Read the lab's Dockerfile: a base image plus four <span class="mono" style="font-size:34px">COPY</span> lines</div>
+        <div class="lead">This is the actual <span class="mono">Dockerfile</span> in this repo. Minimal on purpose: it bakes exactly what Lab 04's pipeline copied at deploy time.</div>
       </div>
     </div>
 
@@ -404,10 +384,10 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
       <div class="does">
         <div class="hd">What to notice</div>
         <ul>
-          <li><span class="d"></span><span><b>Same paths as Lab 04's <span class="mono">docker cp</span>.</b> <span class="mono">data/projects</span> and <span class="mono">data/config</span>: Ignition scans them at startup. Only <i>when</i> they arrive changed.</span></li>
-          <li><span class="d"></span><span><b>Pinned base image.</b> An immutable-artifact philosophy is undermined by a floating <span class="mono">:latest</span>: two builds a week apart could silently differ.</span></li>
-          <li><span class="d"></span><span><b>Nothing to override.</b> The IA base image already defines the entrypoint, <span class="mono">EXPOSE 8088</span> and a healthcheck. We inherit all of it.</span></li>
-          <li><span class="d"></span><span><b>Per-environment knobs stay out.</b> Admin password, EULA, module cert/license acceptance live as <b>env vars in compose</b>: config that varies per env doesn't belong in a shared artifact.</span></li>
+          <li><span class="d"></span><span><b>Same paths as Lab 04's <span class="mono">docker cp</span>.</b> <span class="mono">data/projects</span> and <span class="mono">data/config</span>: Ignition scans them at startup. Only <i>when</i> they arrive changed: build time instead of deploy time.</span></li>
+          <li><span class="d"></span><span><b>FROM = start from the stock gateway.</b> We inherit the whole Ignition install, its entrypoint, <span class="mono">EXPOSE 8088</span> and healthcheck. We only add our files on top.</span></li>
+          <li><span class="d"></span><span><b>Pinned base version.</b> A floating <span class="mono">:latest</span> means two builds a week apart could silently differ. Pin it, bump it on purpose.</span></li>
+          <li><span class="d"></span><span><b>Per-environment values stay out.</b> Admin password, EULA acceptance, config mode: those are <b>env vars in compose</b>. Config that varies per environment does not belong in a shared artifact.</span></li>
         </ul>
       </div>
     </div>
@@ -418,7 +398,7 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Dockerfile: the deploy spec</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Dockerfile is the deploy spec, in Git</span></div>
 </section>
 
 <!-- 6 · LAYER ORDER = CACHE STRATEGY (interactive stack) -->
@@ -429,8 +409,8 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
   </div>
 
   <div style="text-align:center">
-    <div style="font-weight:800;font-size:34px;letter-spacing:-.5px;color:#fff">Layer order is a cache strategy</div>
-    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde;max-width:70ch">Each <b style="color:#fff">COPY is its own layer</b>, cached on its inputs. A busted layer busts <b style="color:#fff">every layer after it</b>, so order from least- to most-frequently-changed.</p>
+    <div style="font-weight:800;font-size:34px;letter-spacing:-.5px;color:#fff">How layers cache: order the Dockerfile least- to most-volatile</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde;max-width:70ch">Each <b style="color:#fff">COPY is its own layer</b>, cached on its inputs. A busted layer busts <b style="color:#fff">every layer after it</b>, so the files you touch daily go last.</p>
   </div>
 
   <div class="lstack-wrap">
@@ -461,52 +441,59 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
   </div>
 </section>
 
-<!-- 7 · MODULES + THIRD-PARTY + JARS -->
+<!-- 7 · THE WILMS DOCKERFILE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block C · modules</div>
+    <div class="stage">Block C · a production Dockerfile</div>
   </div>
 
   <div class="body">
     <div class="sechead">
       <span class="num">04</span>
       <div>
-        <div class="title">Modules ride inside the image</div>
-        <div class="lead">Two pieces bake together: the <b>binaries</b> and the <b>enablement manifest</b>. This is the Lab 04 payoff.</div>
+        <div class="title">A production Dockerfile: how Wilms bakes their gateway</div>
+        <div class="lead">The lab's Dockerfile is the minimal version. The real one from the Wilms production repo (condensed below) does more, and every extra line earns its keep. We read it together on screen.</div>
       </div>
     </div>
 
-    <div class="cols2">
+    <div class="split">
+      <div class="code"><pre><span class="cm"># stage 1: compile a fresh gosu binary (fewer CVEs than the bundled one)</span>
+FROM golang:1.25-bookworm AS gosu-builder
+<span class="cm"># … go build → /out/gosu …</span>
+
+FROM inductiveautomation/ignition:${IGNITION_VERSION}
+USER root
+COPY --chown=2003:2003 docker_db_migrations/   <span class="cmd2">/docker_db_migrations/</span>
+COPY --chown=2003:2003 docker_startup_scripts/ <span class="cmd2">/docker_startup_scripts/</span>
+COPY --chown=2003:2003 modules/ignition/ <span class="cmd2">…/data/var/ignition/modl/</span>
+COPY --chown=2003:2003 modules/jar/      <span class="cmd2">…/lib/core/gateway/</span>
+COPY --chown=2003:2003 pylib/Wilms       <span class="cmd2">…/user-lib/pylib/Wilms</span>
+COPY --chown=2003:2003 config/           <span class="cmd2">…/data/config</span>
+COPY --chown=2003:2003 projects/  <span class="cmd2">/usr/local/share/ignition-seed/projects/</span>
+
+RUN <span class="cm"># import company CA certs into the OS + JRE trust stores,</span> \
+    <span class="cm"># then snapshot data/ into an immutable seed tree:</span> \
+    cp -a …/data/. <span class="hl">/usr/local/share/ignition-seed/data/</span>
+
+USER 2003:2003
+ENTRYPOINT ["/usr/local/bin/<span class="hl">entrypoint.sh</span>"]  <span class="cm"># then chains to the stock one</span></pre></div>
       <div class="does">
-        <div class="hd">third-party-modules/ · the binaries</div>
+        <div class="hd">What grew, and why</div>
         <ul>
-          <li><span class="d"></span><span>Bundled <span class="mono">.modl</span> files: <b>Embr Charts</b>, <b>Embr Periscope</b>, <b>MQTT Engine</b>, <b>TimescaleDB Historian</b>.</span></li>
-          <li><span class="d"></span><span>Loaded via <span class="mono">-Dignition.gateway.externalModulesFolder=/third-party-modules</span> (see the compose <span class="mono">command:</span>).</span></li>
-          <li><span class="d"></span><span>Baked as the <b>first COPY layer</b>: large and rarely changing, so it's almost always <span class="mono">CACHED</span>.</span></li>
-          <li><span class="d"></span><span><b>External JAR libraries follow the same move.</b> In 8.3 even JDBC drivers ship as modules: <span class="mono">modules.json</span> enables <span class="mono">com.inductiveautomation.jdbc.postgresql</span> right here. Anything else JAR-shaped is just one more <span class="mono">COPY</span> layer: binaries ship with the artifact, not by hand.</span></li>
+          <li><span class="d"></span><span><b>More kinds of cargo.</b> Third-party <span class="mono">.modl</span> files, plain <b>JAR libraries</b> on the gateway classpath, a Jython library, and a <b>db-migrations folder</b>. All of it versioned, all of it baked. Lab 06 teaches each of these properly.</span></li>
+          <li><span class="d"></span><span><b>Multi-stage build.</b> Stage 1 exists only to compile one clean binary; the tooling never reaches the shipped image.</span></li>
+          <li><span class="d"></span><span><b>Non-root runtime.</b> Builds as root, runs as the Ignition UID (<span class="mono">2003</span>), hence every <span class="mono">COPY --chown</span>.</span></li>
+          <li><span class="d"></span><span><b>The seed trick.</b> <span class="mono">data/</span> is snapshotted to a <b>seed tree</b>; startup scripts re-seed projects and config from it on <b>every boot</b>. Gateway-UI edits on prod are deliberately erased: the image stays the single source of truth.</span></li>
         </ul>
-      </div>
-      <div>
-        <div class="code"><pre><span class="cm"># services/modules.json: which modules turn on at boot</span>
-"com.cirruslink.mqtt.engine.gateway": {
-  "filename": <span class="cmd2">"/third-party-modules/MQTT-Engine-signed.modl"</span>,
-  "onStartup": <span class="hl">"enabled"</span>,
-  "certFingerprint": "b3d505…",
-  "licenseAgreementHash": 1007003261
-}</pre></div>
-        <div class="callout" style="margin-top:16px">
-          <div class="lab">Why this can't scan</div>
-          <p><span class="mono">modules.json</span> is read <b>at boot</b>. A scan can't enable a module: <b>only a restart can</b>. When the manifest is a layer in the image, "restart with the new module" is just <b>"run the new image."</b> The cert fingerprint + license hash let the gateway accept it headlessly.</p>
-        </div>
       </div>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>services/modules.json + third-party-modules/</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Reference: wilms-ignition-repo · Dockerfile + entrypoint.sh</span></div>
 </section>
 
-<!-- 8 · .DOCKERIGNORE -->
+<!-- 8 · DOCKERIGNORE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -517,8 +504,8 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
     <div class="sechead">
       <span class="num">05</span>
       <div>
-        <div class="title"><span class="mono" style="font-size:34px">.dockerignore</span> · guard the build context</div>
-        <div class="lead">The build context is the tarball Docker hands the daemon before running the Dockerfile. This is the image-based analogue of Lab 04's <span class="mono">.deployignore</span>, moved <b>into the tool</b>.</div>
+        <div class="title"><span class="mono" style="font-size:34px">.dockerignore</span>: keep the build context small and secret-free</div>
+        <div class="lead">The build context is the folder tarball Docker hands the builder before running the Dockerfile. This is the image-based analogue of Lab 04's <span class="mono">.deployignore</span>, moved <b>into the tool</b>.</div>
       </div>
     </div>
 
@@ -526,8 +513,8 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
       <ul class="checks" style="max-width:900px">
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Speed.</b> <span class="mono">.git/</span>, <span class="mono">docs/</span>, <span class="mono">exercises/</span> are megabytes Docker would otherwise upload and checksum on <i>every</i> build. <span class="mono">.git</span> is usually the biggest single chunk.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Cleanliness.</b> Our Dockerfile only COPYs four paths, but a careless future <span class="mono">COPY . .</span> would drag in everything not ignored. Defence in depth.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Secrets: the line that matters most.</b> <span class="mono">.env</span> is excluded so credentials can <b>never</b> be baked into a published, pullable artifact.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>It's enforced.</b> <span class="mono">scripts/validate.sh</span> and <span class="mono">ci.yml</span> both assert the must-exclude patterns are present: <span class="mono">.env</span>, <span class="mono">.git/</span>, <span class="mono">scripts/</span>, <span class="mono">docs/</span>, <span class="mono">exercises/</span>.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Secrets: the line that matters most.</b> <span class="mono">.env</span> is excluded so credentials can <b>never</b> be baked into a shareable artifact. An image gets handed around; a leaked file inside it travels with every copy.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Operational state stays out too.</b> <span class="mono">.resources/</span> blob stores and <span class="mono">*.idb</span> databases are gateway-owned runtime state (Lab 04's "never commit" list): baking them in would ship one gateway's private state to every other.</span></li>
       </ul>
       <div>
         <div class="code"><pre><span class="cm"># .dockerignore (excerpt)</span>
@@ -544,7 +531,7 @@ scripts/
 **/*.idb</pre></div>
         <div class="callout" style="margin-top:16px">
           <div class="lab" style="color:var(--blue)">Context ≠ image</div>
-          <p>The <b>context</b> is what's <i>sent</i> to the daemon; the <b>image</b> is what the COPYs <i>select</i> from it. <span class="mono">.dockerignore</span> shrinks the former; the Dockerfile selects the latter.</p>
+          <p>The <b>context</b> is what's <i>sent</i> to the builder; the <b>image</b> is what the COPYs <i>select</i> from it. <span class="mono">.dockerignore</span> shrinks the former; the Dockerfile selects the latter.</p>
         </div>
       </div>
     </div>
@@ -553,62 +540,68 @@ scripts/
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>.dockerignore: speed · cleanliness · secrets</span></div>
 </section>
 
-<!-- 9 · TAGS & PROVENANCE -->
+<!-- 9 · DIVIDER · BLOCK D -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Block D · deploying the image</div>
+  </div>
+  <div class="divider">
+    <div class="eyebrow">Block D · How an image-based deployment works</div>
+    <div class="q">Deploy by <em>replacing</em> the container</div>
+    <div class="sub2">The image contains the state, so a deploy is: stop the old container, start a new one from the new image. No copy scripts, no scan call. Now: what does that trade away, and what does it buy?</div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>trade-offs → the five steps → a real pipeline → rollback</span></div>
+</section>
+
+<!-- 10 · ADVANTAGES AND DISADVANTAGES (reveal) -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block C · naming builds</div>
+    <div class="stage">Block D · trade-offs</div>
   </div>
 
   <div class="body">
     <div class="sechead">
       <span class="num">06</span>
       <div>
-        <div class="title">One image, several names</div>
-        <div class="lead"><b>Deploy immutable tags, navigate with moving tags.</b> And stamp every image with the commit it came from.</div>
+        <div class="title">File-based vs image-based: advantages and disadvantages</div>
+        <div class="lead">Same files, same target paths, same end result. Each side pays a different price. Know both lists before you pick one for a customer.</div>
       </div>
     </div>
 
-    <div class="split">
-      <div>
-        <div class="tagrow"><code>:sha-&lt;short&gt;</code><span class="kind imm">immutable</span><span class="desc"><b>The thing you actually deploy.</b> Always points at exactly one build.</span></div>
-        <div class="tagrow"><code>:dev</code><span class="kind mov">moving</span><span class="desc">"Whatever's latest on dev." A convenient pointer, but <b>never deploy by this name</b>; it moves under you.</span></div>
-        <div class="tagrow"><code>:vX.Y.Z</code><span class="kind imm">immutable</span><span class="desc">A released version. A <b>re-tag</b> of the tested image, no rebuild.</span></div>
-        <div class="tagrow"><code>:prod</code><span class="kind mov">moving</span><span class="desc">"Whatever's live in prod." Same caveat as <span class="mono">:dev</span>.</span></div>
-        <div class="tagrow"><code>:local</code><span class="kind mov">moving</span><span class="desc">Your latest local build: what <span class="mono">scripts/build-image.sh</span> tags alongside <span class="mono">:sha-…</span>.</span></div>
+    <div class="mvr">
+      <div class="panelbox reveal" data-step="1">
+        <div class="ph"><span class="dot" style="background:var(--warn)"></span><h4>File-based (Lab 04)</h4><span class="sub">long-lived gateway</span></div>
+        <ul>
+          <li><span class="pm plus">+</span><span><b>No gateway restart.</b> The container lives on; a hot scan picks up changes in seconds. Runtime state, trial clock and memory tag values stay in place.</span></li>
+          <li><span class="pm plus">+</span><span><b>Fast inner loop.</b> Copy + scan is a deploy measured in seconds, ideal while actively developing.</span></li>
+          <li><span class="pm minus">−</span><span><b>Harder to get the file handling right.</b> You must copy the right files to the right places <b>and delete the right ones first</b>. Miss the delete and stale files linger on the gateway forever. Real pipelines get this wrong: we'll look at one that does.</span></li>
+          <li><span class="pm minus">−</span><span><b>The deploy logic lives in your scripts.</b> Wipe lists, spare lists, <code>.deployignore</code>: all yours to maintain per customer.</span></li>
+        </ul>
       </div>
-      <div>
-        <div class="code"><pre><span class="cm"># CI passes the commit into the build…</span>
-docker build --build-arg GIT_SHA=$(git rev-parse --short HEAD) …
+      <div class="panelbox reveal" data-step="2">
+        <div class="ph"><span class="dot" style="background:var(--good)"></span><h4>Image-based (Lab 05)</h4><span class="sub">disposable gateway</span></div>
+        <ul>
+          <li><span class="pm plus">+</span><span><b>A frozen, versioned artifact.</b> The image you tested is byte-for-byte the image that runs. Rollback and promotion are just <b>running a different tag</b>.</span></li>
+          <li><span class="pm plus">+</span><span><b>No scan API, no copy scripts.</b> Deploy = replace the container. Feels cleaner: there is nothing to copy and nothing to forget to delete.</span></li>
+          <li><span class="pm minus">−</span><span><b>Every deploy is a fresh gateway.</b> Internal state is recreated from scratch; anything that must survive (historian data, memory <b>tag values</b>) has to live outside the container, and retaining tag values takes real design work.</span></li>
+          <li><span class="pm minus">−</span><span><b>Startup downtime.</b> A gateway boot is minutes, not seconds. Either you accept the window or you invest in a solid blue-green setup, and that is real work too.</span></li>
+        </ul>
+      </div>
+    </div>
 
-<span class="cm"># …and months later you can always ask a running
-# container which commit it is:</span>
-docker inspect -f \
-  '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
-  cicd-lab-05-ignition:local</pre></div>
-        <div class="callout" style="margin-top:16px">
-          <div class="lab" style="color:var(--blue)">The question this answers</div>
-          <p><b>"What commit is prod actually running?"</b> With the <code>revision</code> label, that's one <span class="mono">docker inspect</span> away, not an archaeology project.</p>
-        </div>
-      </div>
+    <div class="callout reveal" data-step="3" style="border-left:5px solid var(--blue)">
+      <div class="lab" style="color:var(--blue)">The honest conclusion</div>
+      <p>Neither side is free. In the end <b>both achieve the same result</b>, and once the pipeline is up and running you don't really notice which one you are on. What you notice is the failure modes: stale files on one side, lost runtime state and boot windows on the other.</p>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Tags = names · labels = provenance</span></div>
-</section>
-
-<!-- 10 · DIVIDER · BUILD ONCE PROMOTE MANY -->
-<section class="slide dark">
-  <div class="topbar">
-    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
-    <div class="stage on-dark">Block D · deploy &amp; promote</div>
+  <div class="controls" style="border-top-color:var(--line)">
+    <span class="lead-step" id="mvr-step" style="color:var(--txt-dim)">Two ways to deliver the same files. Step through each side's trade-offs.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next ▶</button>
   </div>
-  <div class="divider">
-    <div class="eyebrow">Block D · Deploy &amp; promote the image</div>
-    <div class="q">Build once. <em>Promote</em> many.</div>
-    <div class="sub2">The image exists. Now: where does it go, who may push and pull it, and how do you guarantee prod runs <span style="color:#fff">the exact bytes dev tested</span>?</div>
-  </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>build → tag → push → pull → run</span></div>
 </section>
 
 <!-- 11 · THE FIVE STEPS (reveal) -->
@@ -622,26 +615,26 @@ docker inspect -f \
     <div class="sechead">
       <span class="num">07</span>
       <div>
-        <div class="title">The pattern in five steps</div>
-        <div class="lead">No SSH-ing files, no scan API. The image already contains the state, so you replace the whole container, then verify health.</div>
+        <div class="title">The five steps of an image-based deploy</div>
+        <div class="lead">Build, tag, push, pull, run. The image already contains the state, so the deploy itself is just "recreate the container from the new image".</div>
       </div>
     </div>
 
     <div class="pipe5">
       <div class="pbox hosted reveal" data-step="1"><span class="pn">STEP 1</span><h4>Build</h4><p>Bake projects / config / modules into layers from the <code>Dockerfile</code>.</p></div>
       <div class="parr reveal" data-step="1">→</div>
-      <div class="pbox hosted reveal" data-step="2"><span class="pn">STEP 2</span><h4>Tag</h4><p><code>:sha-&lt;short&gt;</code> (immutable) + a moving pointer (<code>:dev</code>).</p></div>
+      <div class="pbox hosted reveal" data-step="2"><span class="pn">STEP 2</span><h4>Tag</h4><p>An immutable name for this exact build: <code>:sha-&lt;short&gt;</code> or a version like <code>:v0.9.1</code>.</p></div>
       <div class="parr reveal" data-step="2">→</div>
-      <div class="pbox hosted reveal" data-step="3"><span class="pn">STEP 3</span><h4>Push</h4><p>To the registry: GHCR, under <b>your fork's</b> namespace.</p></div>
+      <div class="pbox hosted reveal" data-step="3"><span class="pn">STEP 3</span><h4>Push</h4><p>Upload to a registry the target machine can reach.</p></div>
       <div class="parr reveal" data-step="3">→</div>
-      <div class="pbox selfhosted reveal" data-step="4"><span class="pn">STEP 4</span><h4>Pull</h4><p>On the runner that owns the target gateway.</p></div>
+      <div class="pbox selfhosted reveal" data-step="4"><span class="pn">STEP 4</span><h4>Pull</h4><p>The machine that runs the gateway downloads that tag.</p></div>
       <div class="parr reveal" data-step="4">→</div>
-      <div class="pbox selfhosted reveal" data-step="5"><span class="pn">STEP 5</span><h4>Run</h4><p><code>docker compose up -d ignition-&lt;env&gt;</code> recreates the container.</p></div>
+      <div class="pbox selfhosted reveal" data-step="5"><span class="pn">STEP 5</span><h4>Run</h4><p>Recreate the container from the new image. That <b>is</b> the deploy.</p></div>
     </div>
 
     <div class="callout reveal" data-step="6">
-      <div class="lab">Contrast with Lab 04</div>
-      <p>File-based was <b>checkout → prune → ship → scan → verify</b>: the artifact was <i>files</i> and the gateway stayed alive. Here the artifact is an <i>image</i> and the gateway is <b>replaced</b>. Old container runs until the new one is ready, then swaps, so the <span class="mono">rm -rf</span> + <span class="mono">docker cp</span> partial-state window is gone entirely.</p>
+      <div class="lab">In this lab: steps 1, 2 and 5, all local</div>
+      <p>A gateway image is <b>around 2 GB</b>. Pushing that through a home connection for every exercise is no fun, so in the assignment you <b>build and tag locally</b> and deploy by recreating the local dev container: same steps 1, 2 and 5, with the registry legs (3 and 4) shown on the next slide instead of exercised. The mechanics are identical; only the transport is missing.</p>
     </div>
   </div>
 
@@ -652,175 +645,40 @@ docker inspect -f \
   </div>
 </section>
 
-<!-- 12 · BUILD IS PORTABLE, DEPLOY IS NOT -->
+<!-- 12 · HOW WILMS RUNS IT -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block D · topology</div>
+    <div class="stage">Block D · a real pipeline</div>
   </div>
 
   <div class="body">
     <div class="sechead">
       <span class="num">08</span>
       <div>
-        <div class="title">Build is portable. Deploy is not.</div>
-        <div class="lead">In Lab 04 the self-hosted runner did <b>everything</b>. Here it only does the last mile, and that split is the operational payoff.</div>
-      </div>
-    </div>
-
-    <div class="flow">
-      <div class="fbox">
-        <div class="fh"><span class="dot" style="background:var(--teal)"></span><h4>GitHub Actions · <span class="mono" style="font-weight:600">ubuntu-latest</span></h4></div>
-        <p>The <b>build</b> job: docker build + push. Just needs Docker + registry creds, nothing environment-specific. <b>Free hosted minutes</b>, off your privileged runner.</p>
-      </div>
-      <div class="farr"><div class="a">→</div><div class="t">build + push</div></div>
-      <div class="fbox">
-        <div class="fh"><span class="dot" style="background:var(--blue)"></span><h4>GHCR · your namespace</h4></div>
-        <p><code>ghcr.io/&lt;you&gt;/cicd-lab-05-ignition</code><br>holds <code>:sha-…</code>, <code>:dev</code>, <code>:vX.Y.Z</code>, <code>:prod</code>. Auth = the workflow's built-in <code>GITHUB_TOKEN</code>.</p>
-      </div>
-      <div class="farr"><div class="a">→</div><div class="t">docker pull</div></div>
-      <div class="fbox">
-        <div class="fh"><span class="dot" style="background:var(--warn)"></span><h4>Self-hosted runner · <span class="mono" style="font-weight:600">[self-hosted, lab05]</span></h4></div>
-        <p>The <b>deploy</b> job: pull + <code>docker compose up -d</code>. Must reach the gateway container's Docker daemon, which is <i>why</i> it can't be hosted.</p>
-      </div>
-    </div>
-
-    <div class="callout">
-      <div class="lab" style="color:var(--blue)">Two footnotes that bite</div>
-      <p><b>1.</b> <span class="mono">.github/actionlint.yaml</span> declares the custom <code>lab05</code> label so actionlint doesn't flag it as unknown. <b>2.</b> The runner mounts the Docker socket: <b>lab-grade, not production-grade</b>. Real setups use a pull-based agent on the gateway host or an orchestrator (that discussion is the Block D debrief).</p>
-    </div>
-  </div>
-
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Free build minutes · privileged runner does less</span></div>
-</section>
-
-<!-- 13 · GIT FLOW → GATEWAYS -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block D · Git Flow</div>
-  </div>
-
-  <div class="body">
-    <div class="sechead">
-      <span class="num">09</span>
-      <div>
-        <div class="title">Git Flow: two branches, two gateways</div>
-        <div class="lead">Every long-lived branch maps to a deployed environment. Three workflows do all the work.</div>
+        <div class="title">How the Wilms pipeline builds and deploys the image</div>
+        <div class="lead">The same five steps, as they run in production today. We walk the real pipeline file on screen; here is the shape to hold on to.</div>
       </div>
     </div>
 
     <table class="tbl">
-      <tr><th>Trigger</th><th>Workflow</th><th>Runs on</th><th>What happens</th></tr>
-      <tr><td><code>PR → develop / main</code></td><td><code>ci.yml</code></td><td>hosted</td><td>JSON sweep · <code>.dockerignore</code> sanity · hadolint · actionlint · <b>a no-push image build</b>: a broken Dockerfile fails the PR, not the deploy.</td></tr>
-      <tr><td><code>push → develop</code></td><td><code>deploy.yml</code></td><td>hosted + self-hosted</td><td>Build &amp; push <code>:sha-&lt;short&gt;</code> + <code>:dev</code> → pull &amp; recreate the <b>dev</b> gateway (:8089).</td></tr>
-      <tr><td><code>tag v* (on main)</code></td><td><code>release.yml</code></td><td>hosted + self-hosted</td><td><b>Promote</b> <code>:dev</code> → <code>:vX.Y.Z</code> + <code>:prod</code> (no rebuild) → recreate the <b>prod</b> gateway (:8090).</td></tr>
+      <tr><th>Stage</th><th>What happens</th><th>Worth stealing</th></tr>
+      <tr><td>Version</td><td>A merge to <code>main</code> computes the next version from git history (GitVersion) and pushes a <code>v0.9.1</code>-style tag. The run <b>fails if the tag already exists</b>.</td><td>Humans never invent version numbers; the pipeline does.</td></tr>
+      <tr><td>Build + push</td><td>The image is built once and pushed to the company registry, tagged with that version.</td><td><b>Build once.</b> Every environment runs a tag of this one build, never a rebuild.</td></tr>
+      <tr><td>Deploy</td><td>The "deploy" is <code>docker compose down</code> + <code>up</code> with the new tag: the old container is destroyed, a fresh one boots from the new image. Startup scripts re-seed projects and config from the image on every boot.</td><td>Deploy and restart are the <b>same operation</b>. There is no drift to manage: the image is the truth.</td></tr>
+      <tr><td>Rollback</td><td>Point the deployed tag back to the previous version and run the same deploy. The old image still exists in the registry, untouched.</td><td>Rollback is <b>not a special procedure</b>, just yesterday's tag.</td></tr>
     </table>
 
-    <div class="cols2" style="margin-top:18px">
-      <div class="callout" style="margin-top:0">
-        <div class="lab" style="color:var(--blue)">The local gateway stays file-based</div>
-        <p><code>local</code> (:8088) bind-mounts <span class="mono">./projects</span> + <span class="mono">./services/config</span>: you <b>author</b> there, exactly like Lab 04. The image you ship is <b>built from those same files</b>. Inner loop and release path, one repo.</p>
-      </div>
-      <div class="callout" style="margin-top:0">
-        <div class="lab">Environments = gates</div>
-        <p>Each deploy job runs in a GitHub <b>environment</b> (<span class="mono">lab-gateway-dev</span> / <span class="mono">lab-gateway-prod</span>): per-stage deploy history for free, and the place to bolt <b>required reviewers</b> onto prod, a manual approval gate with zero workflow changes.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>develop → dev · main + tag → prod</span></div>
-</section>
-
-<!-- 14 · PROMOTE, DON'T REBUILD -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block D · the centerpiece</div>
-  </div>
-
-  <div class="body">
-    <div class="sechead">
-      <span class="num">10</span>
-      <div>
-        <div class="title">Promote, don't rebuild</div>
-        <div class="lead">The single most important idea of the day: on a release tag, <b>nothing is rebuilt</b>. The tested image is re-tagged, server-side.</div>
-      </div>
-    </div>
-
-    <div class="split">
-      <div>
-        <div class="code"><pre><span class="cm"># release.yml on tag v0.1.0: a manifest copy, no layers move</span>
-docker buildx imagetools create \
-  --tag &lt;repo&gt;:<span class="hl">v0.1.0</span> --tag &lt;repo&gt;:<span class="hl">prod</span> \
-  &lt;repo&gt;:<span class="cmd2">dev</span>     <span class="cm"># the exact image dev validated</span>
-
-<span class="cm"># then prove it: same digest on both gateways:</span>
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-dev
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-prod
-<span class="cm"># identical sha256:… means prod runs the bytes dev tested</span></pre></div>
-      </div>
-      <div>
-        <ul class="checks">
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Why <span class="mono">:dev</span> and not the tagged commit?</b> A Git Flow release is a <i>merge into main</i>, a <b>new commit SHA no image was ever built for</b>. So you promote <i>what dev is running</i>, not "by commit."</span></li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Why not just rebuild from the tag?</b> A rebuild could pull a newer base layer or a non-deterministic dependency, so you'd ship bytes <b>dev never saw</b>. Build-once/promote-many makes that impossible by construction.</span></li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The <span class="mono">release/*</span> branch is your freeze point.</b> Cut it when <span class="mono">develop</span> (and therefore the <span class="mono">:dev</span> image) is exactly what you want in prod. (In the lab, a plain merge stands in for it.)</span></li>
-        </ul>
-        <div class="callout" style="margin-top:16px">
-          <div class="lab" style="color:var(--good)">The money moment</div>
-          <p>The <b>digest-equality proof</b> is Part 4 of the You-do. If the digests could differ, what would that mean, and why would it scare you?</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Same digest · same bytes · zero surprises</span></div>
-</section>
-
-<!-- 15 · ROLLBACK -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block D · rollback</div>
-  </div>
-
-  <div class="body">
-    <div class="sechead">
-      <span class="num">11</span>
-      <div>
-        <div class="title">Rollback = run the previous tag</div>
-        <div class="lead">Three patterns, increasing maturity. Image-based makes the strong ones cheap.</div>
-      </div>
-    </div>
-
-    <div class="gaps">
-      <div class="gapcard" style="--c:1">
-        <div class="pn">PATTERN 1</div>
-        <h4><span class="mono" style="font-size:15px">git revert</span> + re-merge</h4>
-        <p>Triggers a fresh build/deploy of the reverted state. Works, but it <b>rebuilds</b>, and you wait for the whole pipeline.</p>
-      </div>
-      <div class="gapcard" style="--c:2">
-        <div class="pn">PATTERN 2 · THE CANONICAL ONE</div>
-        <h4>Re-promote a known-good tag</h4>
-        <p><span class="mono">release.yml</span>'s <b>workflow_dispatch</b> takes a version input: point prod at <code>v0.1.0</code>'s <b>existing</b> image in two clicks. No rebuild, no git surgery, <b>zero irreversible steps</b>.</p>
-      </div>
-      <div class="gapcard" style="--c:3">
-        <div class="pn">PATTERN 3</div>
-        <h4>Keep N versions warm</h4>
-        <p>Every release is an immutable tag in the registry, so rollback is <i>always</i> available for any version you haven't deleted. The real question becomes tag retention.</p>
-      </div>
-    </div>
-
     <div class="callout">
-      <div class="lab">Compare to Lab 04</div>
-      <p>File-based rollback meant <b>re-copying old files and re-scanning</b>: more steps, partial-state risk, nothing immutable to point at. Ask of each path: <b>how many irreversible steps?</b> Image-based: zero, because you're pointing at an artifact that already exists.</p>
+      <div class="lab" style="color:var(--blue)">Division of labour</div>
+      <p>The app repo owns the <b>Dockerfile and what goes in the image</b>. The infra side owns <b>where it runs and which env vars it gets</b> (including secrets: that story is Lab 06). Clean seam: the artifact travels, the environment stays put.</p>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Actions → Release → Run workflow → v0.1.0</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Reference: wilms-ignition-repo · pipeline + GitVersion</span></div>
 </section>
 
-<!-- 16 · WHAT LIVES WHERE -->
+<!-- 13 · WHAT DIES, WHAT SURVIVES -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -829,24 +687,21 @@ docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-prod
 
   <div class="body">
     <div class="sechead">
-      <span class="num">12</span>
+      <span class="num">09</span>
       <div>
-        <div class="title">What lives where, and what's safe to throw away</div>
-        <div class="lead">Recreating the container on every deploy is only safe because the durable data <b>isn't in the container</b>.</div>
+        <div class="title">What dies with the container, and what must live outside it</div>
+        <div class="lead">Replacing the container on every deploy is only safe when the data that matters <b>is not in the container</b>. This is the design work the "fresh gateway" disadvantage demands.</div>
       </div>
     </div>
 
     <div class="split">
       <div>
         <table class="tbl">
-          <tr><th>In the image: dies each deploy</th><th>Outside: persists</th></tr>
-          <tr><td style="white-space:normal">Project content, config, module manifest + binaries</td><td>Historian data → <b>TimescaleDB</b></td></tr>
-          <tr><td style="white-space:normal">The gateway's commissioned internal DB (re-created each boot)</td><td>Anything you deliberately put on an external volume or DB</td></tr>
+          <tr><th>Dies with the container</th><th>Must live outside</th></tr>
+          <tr><td style="white-space:normal">Project content, config, modules (they come back from the image: that's the point)</td><td>Historian data → <b>TimescaleDB</b>, its own container + volume</td></tr>
+          <tr><td style="white-space:normal">The gateway's internal DB, re-commissioned each boot</td><td>Memory <b>tag values</b> you can't afford to lose → external DB, or don't go image-based for that gateway</td></tr>
+          <tr><td style="white-space:normal">Logs, trial clock, anything hand-edited in the gateway UI</td><td>Audit logs, alarm journal, user uploads → volume or database, chosen deliberately</td></tr>
         </table>
-        <div class="callout" style="margin-top:16px">
-          <div class="lab">The real-world decision</div>
-          <p>dev/prod here have <b>no persistent volume, intentionally</b>. In a real deployment, <b>gateway audit logs, alarm journal, named user accounts</b> each force the question: does this belong in the <b>image</b>, a <b>volume</b>, or a <b>database</b>?</p>
-        </div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># db-init/01-create-env-databases.sql
@@ -854,105 +709,18 @@ docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-prod
 CREATE DATABASE <span class="hl">ignition_dev</span>;
 CREATE DATABASE <span class="hl">ignition_prd</span>;
 <span class="cm"># (ignition_loc comes from POSTGRES_DB in compose)</span></pre></div>
-        <div class="does" style="margin-top:16px">
-          <div class="hd">The compose stack: one DB, three databases</div>
-          <ul>
-            <li><span class="d"></span><span><b>One TimescaleDB</b>, three logical databases: <span class="mono">ignition_loc</span> / <span class="mono">_dev</span> / <span class="mono">_prd</span>, and each gateway points at its own.</span></li>
-            <li><span class="d"></span><span>Each gateway passes <span class="mono">-Dignition.config.mode=loc|dev|prd</span> so config can vary per environment.</span></li>
-            <li><span class="d"></span><span>Historian data lives <b>here</b>, which is exactly why throwing away the dev/prod container on each deploy is safe.</span></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The database deploys with your code, not inside your image</span></div>
-</section>
-
-<!-- 17 · FILE-BASED VS IMAGE-BASED: WHEN EACH FITS -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Trade-offs</div>
-  </div>
-
-  <div class="body">
-    <div class="sechead">
-      <span class="num">13</span>
-      <div>
-        <div class="title">When to pick which</div>
-        <div class="lead">Lab 04 planted this table as a preview, and you've now run both sides, so let's settle it. Not a versus but a <b>division of labour</b>: file-based for the inner loop, image-based for releases.</div>
-      </div>
-    </div>
-
-    <table class="tbl">
-      <tr><th>Concern</th><th>File-based (Lab 04)</th><th>Image-based (Lab 05)</th></tr>
-      <tr><td>Time to deploy</td><td><span class="fb">Seconds</span>: cp + scan</td><td>Minutes: build → push → pull → boot</td></tr>
-      <tr><td>Hot reload</td><td><span class="fb">Yes</span>: a scan picks up project edits live</td><td>No: every deploy is a container restart</td></tr>
-      <tr><td>Module changes</td><td>Can't: a scan won't apply them</td><td><span class="ib">Trivial</span>: baked in</td></tr>
-      <tr><td>Gateway impact</td><td>Mutates a <b>live</b> gateway: <code>rm -rf</code> + cp leaves a partial-state window</td><td><span class="ib">Replaced whole</span>: old container serves until the new one is up; durable state must live outside (TimescaleDB)</td></tr>
-      <tr><td>Rollback</td><td>Hard: re-copy old files</td><td><span class="ib">Easy</span>: run the previous tag</td></tr>
-      <tr><td>Promotion across envs</td><td>Re-copy per env</td><td><span class="ib">Re-tag</span> the tested image</td></tr>
-      <tr><td>Auditable artifact</td><td>None: just git</td><td>A versioned, labelled image with a digest</td></tr>
-      <tr><td>Best for</td><td><span class="fb">Active development</span>, frequent project edits</td><td><span class="ib">Releases</span>, module/baseline changes, immutable infra</td></tr>
-    </table>
-
-    <div class="callout">
-      <div class="lab">When NOT to go image-based</div>
-      <p><b>Sub-minute iteration</b> on project content (rebuild + reboot per view tweak is pain, so use the file-based loop) · <b>stateful gateway data you can't externalize</b> (fix the state location first) · <b>no registry reachable from the target</b> (air-gapped sites need <code>docker save/load</code> or a local registry mirror). Full write-up: <code>docs/image-based-deploy-pattern.md</code>.</p>
-    </div>
-  </div>
-
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Both, not either: that's the mature setup</span></div>
-</section>
-
-<!-- 18 · GHCR AUTH -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Block D · registry auth</div>
-  </div>
-
-  <div class="body">
-    <div class="sechead">
-      <span class="num">14</span>
-      <div>
-        <div class="title">GHCR auth: least privilege, zero secrets</div>
-        <div class="lead">No registry account, no API key, no PAT for the registry. The workflow's built-in token does everything.</div>
-      </div>
-    </div>
-
-    <div class="split">
-      <ul class="checks" style="max-width:900px">
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Push:</b> the build/promote jobs request <span class="mono">permissions: packages: write</span> and log in with the job-scoped <span class="mono">GITHUB_TOKEN</span>. It expires with the run.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Pull:</b> the deploy jobs log in with the same token. Pulling only needs <span class="mono">packages: read</span>, which write includes.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Your namespace, always.</b> The workflows derive <span class="mono">ghcr.io/&lt;owner&gt;/…</span> from <span class="mono">github.repository_owner</span>, so a student's fork publishes under <i>their</i> account, never Mustry's.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>First push creates the package</b>, private by default, and that's fine: the runner authenticates.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Don't</b> hand the runner a broad PAT "to be safe." The job token is enough: that's the point.</span></li>
-      </ul>
-      <div>
-        <div class="code"><pre><span class="cm"># deploy.yml (excerpt)</span>
-permissions:
-  contents: read
-  <span class="hl">packages: write</span>
-
-- uses: docker/login-action@v3
-  with:
-    registry: ghcr.io
-    username: ${{ github.actor }}
-    password: <span class="cmd2">${{ secrets.GITHUB_TOKEN }}</span></pre></div>
         <div class="callout" style="margin-top:16px">
-          <div class="lab">The classic 403</div>
-          <p>Fork under an <b>org</b>? <i>Settings → Actions → General → Workflow permissions</i> must be <b>read and write</b>, and org Packages enabled. Personal forks work out of the box. Full list in <code>docs/TROUBLESHOOTING.md</code>.</p>
+          <div class="lab">Ask this question per data kind</div>
+          <p>For every piece of state on a gateway: does it belong in the <b>image</b> (comes back on deploy), a <b>volume</b> (survives the container) or a <b>database</b> (survives the machine)? Wilms answers it per folder: user uploads get stashed and restored across the re-seed; everything else is image-owned.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>GITHUB_TOKEN: scoped to the job, gone after the run</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Externalize state first, then containers become disposable</span></div>
 </section>
 
-<!-- 19 · CLOSING / HANDOFF -->
+<!-- 14 · CLOSING / HANDOFF -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -961,11 +729,12 @@ permissions:
 
   <div class="body">
     <div class="eyebrow">Now we make it real</div>
-    <div class="title" style="max-width:24ch;color:#fff">Next: you build it, ship it, and <em style="font-style:normal;color:var(--peri2)">prove the digest</em>.</div>
+    <div class="title" style="max-width:26ch;color:#fff">Next: build the gateway image locally and deploy it by replacing a container</div>
     <ul class="checks" style="max-width:960px;margin-top:22px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do.</b> We walk the real <span class="mono">Dockerfile</span> and <span class="mono">.dockerignore</span>, build with <span class="mono">scripts/build-image.sh</span>, read the layers with <span class="mono">docker history</span>, and run the image <b>with no bind mounts</b>: the proof it's self-contained.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block C.</b> Bake a module change the scan never could, extend <span class="mono">.dockerignore</span>, tag like CWe-does, and break the build on purpose, watching failures move <b>left</b>, to build time.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block D.</b> Ship to dev through a PR into <span class="mono">develop</span>, cut a <span class="mono">v0.1.0</span> release to prod, <b>prove dev and prod run the same digest</b>, then roll prod back in two clicks.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block C.</b> Build and tag the image, bake a config change into it, extend <span class="mono">.dockerignore</span>, and break the build on purpose to see failures land at <b>build time</b>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Block D.</b> Deploy your local image to the dev gateway by recreating the container, ship a second change end-to-end, then roll back by running the previous tag. All local: no registry, no uploads.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Stretch.</b> A first taste of Lab 06: bake a third-party module, an extra JAR or a migrations folder into your image, the way the Wilms Dockerfile does.</span></li>
     </ul>
     <div class="callout" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14)">
       <div class="lab" style="color:var(--peri2)">Everything is in the repo</div>
@@ -979,7 +748,7 @@ permissions:
 </div>
 
 <div class="hud"><div class="bar" id="bar"></div></div>
-<div class="pager" id="pager">01 / 19</div>
+<div class="pager" id="pager">01 / 14</div>
 <div class="hint" id="hint">↑ ↓ slides · ← → step the animation</div>
 
 <script>
@@ -1031,18 +800,6 @@ function bindControls(slideEl,ctrl){
   return {go,reset:ctrl.reset};
 }
 
-/* ---------- slide 4 (index 3): mutate vs replace (HTML reveal) ---------- */
-(function(){
-  const slide=slides[3];
-  const items=[...slide.querySelectorAll('.reveal')];
-  const lead=slide.querySelector('#mvr-step');
-  const texts=['Two deploy philosophies, side by side.',
-    'Lab 04: the gateway is a <b>long-lived, mutable</b> thing, with files copied in and a scan picking them up.',
-    'Lab 05: the state is <b>frozen into an image</b>. Deploy = pull + recreate. Nothing mutates.',
-    'And the payoff: module changes need a restart, and here <b>the restart IS the deploy</b>.'];
-  controllers.mvr={max:3,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
-})();
-
 /* ---------- slide 6 (index 5): layer cache stack ---------- */
 (function(){
   const slide=slides[5];
@@ -1075,23 +832,35 @@ function bindControls(slideEl,ctrl){
   }};
 })();
 
+/* ---------- slide 10 (index 9): advantages/disadvantages (HTML reveal) ---------- */
+(function(){
+  const slide=slides[9];
+  const items=[...slide.querySelectorAll('.reveal')];
+  const lead=slide.querySelector('#mvr-step');
+  const texts=['Two ways to deliver the same files. Step through each side\'s trade-offs.',
+    'File-based: <b>no restarts and a fast inner loop</b>, but you own the copy-and-delete logic, and getting the deletes wrong means stale files.',
+    'Image-based: <b>a frozen artifact and no copy scripts</b>, but every deploy is a fresh gateway: externalize the state, and mind the boot window.',
+    'The conclusion: <b>same result either way</b>. Once the pipeline runs, you notice the failure modes, not the mechanism.'];
+  controllers.mvr={max:3,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
+})();
+
 /* ---------- slide 11 (index 10): five-step pipeline (HTML reveal) ---------- */
 (function(){
   const slide=slides[10];
   const items=[...slide.querySelectorAll('.reveal')];
   const lead=slide.querySelector('#pipe5-step');
   const texts=['Step through the five moves of an image-based deploy.',
-    '<b>1 · Build.</b> The Dockerfile bakes projects, config and modules into layers, on a free hosted runner.',
-    '<b>2 · Tag.</b> An immutable <b>:sha-&lt;short&gt;</b> plus the moving <b>:dev</b> pointer: same image, two names.',
-    '<b>3 · Push.</b> To GHCR, under your fork\'s namespace, with the built-in GITHUB_TOKEN.',
-    '<b>4 · Pull.</b> The self-hosted runner (the one that owns the gateway) pulls the <b>immutable</b> tag.',
-    '<b>5 · Run.</b> <b>docker compose up -d</b> sees a new image and recreates the container. That\'s the deploy.',
-    'Compare: Lab 04 was checkout → prune → ship → scan → verify. Files vs image; mutate vs <b>replace</b>.'];
+    '<b>1 · Build.</b> The Dockerfile bakes projects, config and modules into layers.',
+    '<b>2 · Tag.</b> An immutable name for this exact build: a SHA or a version number.',
+    '<b>3 · Push.</b> Upload the image to a registry the target machine can reach.',
+    '<b>4 · Pull.</b> The machine that owns the gateway downloads that exact tag.',
+    '<b>5 · Run.</b> Recreate the container from the new image. That <b>is</b> the deploy.',
+    'In this lab: steps 1, 2 and 5, all local. A 2 GB image is nothing you want to upload from a course laptop.'];
   controllers.pipe5={max:6,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
 })();
 
 /* ============ wire controllers to their slides + reset on entry ============ */
-const ctrlBySlide={3:'mvr',5:'lstack',10:'pipe5'};
+const ctrlBySlide={5:'lstack',9:'mvr',10:'pipe5'};
 const bound={};
 for(const idx in ctrlBySlide){const name=ctrlBySlide[idx];bound[idx]=bindControls(slides[idx],controllers[name]);}
 // reset a slide's animation when you scroll onto it
