@@ -158,7 +158,8 @@ body{
 /* control bar for interactive slides */
 .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:14px;margin-top:auto;border-top:1px solid rgba(255,255,255,.08)}
 .controls .lead-step{font-size:13.5px;color:#c4cfde;margin-right:auto;max-width:60ch;line-height:1.45}
-.controls .lead-step b{color:#fff}
+.controls .lead-step b{color:var(--txt)}
+.dark .controls .lead-step b{color:#fff}
 .btn{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.04);color:#dbe4f0;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
 .btn:hover:not(:disabled){background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4)}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
