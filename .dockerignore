@@ -29,6 +29,7 @@ docs/
 exercises/
 instructor-notes/
 scripts/
+slides/
 tests/
 
 # CI / compose / dev-only files
