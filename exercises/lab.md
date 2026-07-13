@@ -83,7 +83,7 @@ docker run --rm --user root -p 9088:8088 \
   -e ACCEPT_IGNITION_EULA=Y \
   -e IGNITION_EDITION=standard \
   -e GATEWAY_ADMIN_USERNAME=admin \
-  -e GATEWAY_ADMIN_PASSWORD=lab05password \
+  -e GATEWAY_ADMIN_PASSWORD=password \
   cicd-lab-05-ignition:local \
   -n demo -- -Dignition.allowunsignedmodules=true
 # wait ~30–60s for "Starting project: example-project" in the log,

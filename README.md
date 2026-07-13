@@ -44,7 +44,7 @@ Once setup finishes you have three Ignition gateways:
 | `dev` | http://localhost:8089 | The **image** `deploy.yml` builds on push to **`develop`**. Base image (empty) until the first deploy. |
 | `prod` | http://localhost:8090 | The **image** `release.yml` promotes on tag push `v*` (cut from `main`). Base image (empty) until the first release. |
 
-Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD`, default `admin / lab05password`).
+Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD`, default `admin / password`).
 
 > **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing → Reset Trial* — unlimited and legal for development. Note: because dev/prod are recreated from a fresh image on each deploy, their trial clock resets every deploy too.
 
