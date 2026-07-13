@@ -1,10 +1,74 @@
-# Block D — instructor answer key
+# Lab 05 — instructor answer key
 
-> **Don't read this before attempting the You-do.** The interesting content is the digest-equality proof and the rollback, not the click-path.
+> **Don't read this before attempting the You-do.** For part 1 the value is in building the image yourself and watching the layer cache behave. For part 2 the interesting content is the digest-equality proof and the rollback, not the click-path.
+
+---
+
+# Part 1 — Build the gateway image
 
 ## What success looks like
 
-By the end of Block D, the participant has:
+By the end of part 1, the participant has:
+
+1. Built the gateway image with `scripts/build-image.sh`, tagged `:sha-<short>` + `:local`.
+2. Run the image with **no bind mounts** and seen `example-project` load at the test port — the self-contained proof.
+3. Baked a module/config change into the image and confirmed it via `docker run … cat modules.json` (no running gateway).
+4. Explained the Dockerfile's layer order as a cache strategy.
+5. Extended `.dockerignore` and kept `scripts/validate.sh` green.
+6. Traced an image back to its commit via the `org.opencontainers.image.revision` label.
+
+If #2 or #3 is missing, push them to finish — those two are the whole "the image *is* the artifact" lesson.
+
+## The four COPY lines, annotated
+
+```dockerfile
+COPY third-party-modules/  /third-party-modules/                       # big, rare → top
+COPY services/modules.json /usr/local/bin/ignition/data/modules.json   # module enablement
+COPY services/config/      /usr/local/bin/ignition/data/config/        # gateway config
+COPY projects/             /usr/local/bin/ignition/data/projects/      # daily churn → bottom
+```
+
+Things to highlight in the grade:
+
+- **modules.json is in the image.** This is the single biggest contrast with Lab 04. A participant who can articulate "a scan can't enable a module, but baking it + recreating the container can" has the core idea.
+- **Layer order.** If they reordered `projects/` to the top "because it's the most important," that's the teachable miss — importance isn't the axis, *volatility* is. Most-volatile last keeps rebuilds cheap.
+- **Paths match Lab 04's `docker cp` targets.** `data/projects` and `data/config` are the same dirs the file-based deploy wrote into. The difference is *when* (build time vs deploy time) and *mutability* (frozen layer vs live copy).
+
+## The `.dockerignore`, annotated
+
+The line that matters most is `.env`. Grade for whether they understand *why*: a careless future `COPY . .`, or even a misconfigured tool, would otherwise bake credentials into a published, pullable artifact. `.dockerignore` is the backstop, not just a speed optimization. The speed/cleanliness reasons (`.git/`, `docs/`) are secondary.
+
+## Common stumbles
+
+- **"My change isn't in the image."** They edited a file but it's matched by `.dockerignore`, or they edited under a path the Dockerfile doesn't `COPY`. Have them run `docker run --rm --entrypoint find <image> /usr/local/bin/ignition/data` and look (the `--entrypoint` is required — the IA image treats trailing args as gateway arguments otherwise).
+- **"Every build rebuilds everything."** They're editing a top layer's input (e.g. `third-party-modules/`), or Docker's cache was cleared. Show `CACHED` vs not in the build output and tie it to which file they touched.
+- **"It won't build — not found in build context."** A `COPY` source typo or a `.dockerignore` pattern that's too broad. The error names the path; read it.
+- **"The standalone `docker run` won't come up."** Missing `-e ACCEPT_IGNITION_EULA=Y`, or they didn't wait for the JVM. It's slower than they expect.
+- **Confusing the build context with the image.** The context is what's *sent* to the daemon; the image is what the `COPY`s *select* from it. `.dockerignore` shrinks the former; the Dockerfile selects the latter.
+
+## Failure-case discussion
+
+Breaking the build on purpose is the cheap, high-value lesson: **image-based moves failures left.** A bad `COPY` path, malformed JSON the build depends on, or a missing module file fails the *build* — on a free hosted runner, before any gateway is touched. In Lab 04 the same class of mistake shipped files onto a live gateway and you found out at scan time (or worse, at runtime). Tie this to `ci.yml`'s no-push build smoke test: the PR fails, not prod.
+
+## Stretch notes
+
+- **`docker history --no-trunc`.** Largest layer is almost always the base image, then third-party modules. The `projects/` layer is tiny. Good prompt: "if projects were 500 MB of assets, would you still bake them, or mount them / pull at runtime?" There's no single right answer — it's the trade-off that matters.
+- **Multi-stage.** Right answer: you don't need it here (IA image is the runtime, we only copy files). You'd add a builder stage to compile a custom module or run tooling you don't want in the shipped image.
+
+## Bridge to part 2
+
+The image exists locally. Part 2 deploys it by recreating the container; the repo's CI workflows extend the same flow through a registry. Foreshadow the two questions that flow answers:
+
+1. *Where does the image go, and who's allowed to push/pull it?* (GHCR + `GITHUB_TOKEN`.)
+2. *How do you ship the same image you tested to prod?* (Build-once / promote-many — re-tag, don't rebuild.)
+
+---
+
+# Part 2 — Deploy the image
+
+## What success looks like
+
+By the end of part 2, the participant has:
 
 1. The bundled `github-runner` online in their fork (`self-hosted, lab05`).
 2. Two GitHub environments (`lab-gateway-dev`, `lab-gateway-prod`) — typically with **no** secrets/variables (GHCR auth is `GITHUB_TOKEN`; `IGNITION_URL` defaults are fine).
@@ -55,7 +119,7 @@ Things to highlight in the grade:
 
 This lab is **Git Flow**: `develop` → dev gateway, `main` (tagged) → prod gateway. The subtlety worth teaching: a Git Flow release is a *merge into `main`*, which produces a **new commit SHA that no image was ever built for**. So `release.yml` can't promote "by commit" — it promotes the **`:dev` image** (what dev is running). That's both a practical necessity and the honest definition of a release: *ship what dev validated*. The `release/*` branch is the conceptual freeze point (in the exercise a plain `develop→main` merge stands in for it). If a participant asks "why not just rebuild from the tag?" — that breaks build-once/promote-many: a rebuild could pull a newer base layer and ship bytes dev never tested.
 
-## The digest-equality proof (Part 4)
+## The digest-equality proof
 
 This is the money moment. After a release:
 
@@ -68,7 +132,7 @@ Same `sha256:…`. If a participant shrugs, ask: *"What would it take for these 
 
 > If `.RepoDigests` is empty for a locally-built image (no registry digest yet), use the CI-deployed images, or compare `docker inspect -f '{{.Image}}'` (the local image ID) instead.
 
-## Rollback (Part 5)
+## Rollback
 
 The canonical image-based rollback: *re-promote a previous tag.* `release.yml`'s `workflow_dispatch` takes a `tag` input; running it with `v0.1.0` re-tags that **existing** image to `:prod` and recreates prod. No rebuild, no `git revert`, no history surgery.
 
@@ -76,7 +140,7 @@ Have them compare to Lab 04, where rolling prod back meant re-copying old files 
 
 ## Common stumbles
 
-- **#1 by far — nothing happens after merge.** Forks ship with **Actions disabled**; the participant never enabled them (Actions tab → "I understand my workflows…"). No CI, no build, no push. Check this first whenever "the workflow didn't run." Worth saying up front in Part 1.
+- **#1 by far — nothing happens after merge.** Forks ship with **Actions disabled**; the participant never enabled them (Actions tab → "I understand my workflows…"). No CI, no build, no push. Check this first whenever "the workflow didn't run." Worth saying up front in Part 2.1.
 - **"Can I even push? It's your registry."** Reassure: the build publishes to *their own* `ghcr.io/<their-fork-owner>/…` (the workflow derives the namespace from `github.repository_owner`), never to Mustry's. Nothing in the lab pushes to a registry they don't own. Good moment to show them the package appearing under *their* fork → Packages.
 - **403 pushing, org-owned fork.** If their fork is under a GitHub org, *Settings → Actions → General → Workflow permissions* must be **read and write**, and org Packages must be enabled. Personal forks are fine by default. (Plain `permissions: packages: write` is already in the workflow.)
 - **401 pulling on the deploy job.** No `docker login ghcr.io` before `docker pull`. The package is private by default; the runner must authenticate.

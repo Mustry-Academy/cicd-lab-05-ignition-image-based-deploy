@@ -1,6 +1,6 @@
 # Image-based deploy pattern — cheat sheet
 
-Reference reading for Block D. The complete pattern in five steps, build-once/promote-many, GHCR auth, rollback, and where image-based fits versus file-based.
+Reference reading for part 2 of the lab. The complete pattern in five steps, build-once/promote-many, GHCR auth, rollback, and where image-based fits versus file-based.
 
 ## The pattern in five steps
 

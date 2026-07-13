@@ -1,6 +1,6 @@
 # Lab 05 — Ignition image-based deploy
 
-Day 3, Blocks C and D of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
+Day 3 of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
 
 > Bake an Ignition gateway's project, config, **and modules** into a versioned Docker image, push it to a registry, and deploy by pulling the image and recreating the container — then promote the *exact same image* you tested in dev to prod on a tag, with rollback as easy as running a previous tag.
 
@@ -52,12 +52,12 @@ Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD
 
 ## Lab structure
 
-| Block | Topic | Exercise |
-|---|---|---|
-| C | Build the gateway image | [`exercises/block-c.md`](./exercises/block-c.md) |
-| D | Deploy & promote the image | [`exercises/block-d.md`](./exercises/block-d.md) |
+The lab is one exercise in two ordered parts — see [`exercises/lab.md`](./exercises/lab.md):
 
-Reference reading sits alongside: [`docs/dockerfile-anatomy.md`](./docs/dockerfile-anatomy.md) (Block C) and [`docs/image-based-deploy-pattern.md`](./docs/image-based-deploy-pattern.md) (Block D).
+1. **Build the gateway image** — bake projects, config, and modules into a self-contained image.
+2. **Deploy the image** — recreate the dev gateway from it, ship a change end-to-end, roll back.
+
+Reference reading sits alongside: [`docs/dockerfile-anatomy.md`](./docs/dockerfile-anatomy.md) (part 1) and [`docs/image-based-deploy-pattern.md`](./docs/image-based-deploy-pattern.md) (part 2).
 
 > The multi-gateway block of Day 3 lives in the [multi-gateway lab](https://github.com/mustry-academy/cicd-lab-06-multi-gateway-deploy).
 
@@ -79,16 +79,14 @@ cicd-lab-05-ignition-image-based-deploy/
 │   ├── actionlint.yaml                 ← declares the self-hosted `lab05` runner label
 │   └── pull_request_template.md
 ├── exercises/
-│   ├── block-c.md                      ← build the image
-│   └── block-d.md                      ← deploy & promote the image
+│   └── lab.md                          ← the lab, in two ordered parts: build the image, then deploy it
 ├── db-init/                            ← timescaledb init: create ignition_dev + ignition_prd databases
 ├── docs/                               ← reference reading
 │   ├── dockerfile-anatomy.md
 │   ├── image-based-deploy-pattern.md
 │   └── TROUBLESHOOTING.md
-├── instructor-notes/                   ← answer keys (read after solo work)
-│   ├── block-c-key.md
-│   └── block-d-key.md
+├── instructor-notes/                   ← answer key (read after solo work)
+│   └── lab-key.md
 ├── scripts/
 │   ├── setup.sh                        ← bootstraps the whole stack
 │   ├── teardown.sh                     ← stop the stack (with --volumes to wipe)
@@ -132,7 +130,7 @@ hotfix/* ─┐ │
           └────────────────────────┘
 ```
 
-| Branch | Role | What CWe-does |
+| Branch | Role | What CI does |
 |---|---|---|
 | `develop` | Integration — feature branches merge here | `deploy.yml` builds the image and ships it to the **dev** gateway |
 | `main` | Release-ready — only `release/*` and `hotfix/*` merge here | nothing on its own; you **tag** `vX.Y.Z` to release |
@@ -166,7 +164,7 @@ The **build is portable** (free GitHub-hosted runner); only the **pull + recreat
 - Auth is the workflow's built-in `GITHUB_TOKEN` (the workflows request `packages: write`). No registry password in `.env`, no extra account. The deploy jobs log in with the same token to **pull**.
 - The first push creates a GHCR package under your namespace. It defaults to **private**; that's fine — the runner authenticates. (Make it public under the package's settings if you want anonymous pulls.)
 - If your fork lives under a GitHub **organization**, the org may restrict this: *Settings → Actions → General → Workflow permissions* must allow **read and write**, and Packages must be enabled. A 403 on push almost always traces back to one of these — see [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md).
-- **No GHCR needed for Blocks C and most of D's mechanics** — the local `build-image.sh`/`deploy-image.sh` flow runs entirely on your machine. GHCR only enters via the CI workflows.
+- **No GHCR needed for the lab exercises** — the local `build-image.sh`/`deploy-image.sh` flow runs entirely on your machine. GHCR only enters via the CI workflows.
 
 Each deploy job runs in a GitHub **environment** so you get per-stage history and optional gates:
 
@@ -177,7 +175,7 @@ Each deploy job runs in a GitHub **environment** so you get per-stage history an
 
 Add **required reviewers** on `lab-gateway-prod` for a manual approval gate before prod releases — common pattern, no workflow change.
 
-Block D walks through the end-to-end setup.
+The deploy part of [`exercises/lab.md`](./exercises/lab.md) walks through the deploy flow these workflows automate.
 
 ## Licence
 

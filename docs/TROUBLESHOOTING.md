@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Quick fixes for the things that bite people during Blocks C and D. Work top to bottom; most issues
+Quick fixes for the things that bite people during the lab. Work top to bottom; most issues
 are one of the first three.
 
 ## The stack won't start / `scripts/setup.sh` fails
@@ -46,7 +46,7 @@ are root-owned, and the gateway needs to create runtime directories under `data/
 which it can't do as the default non-root user. Add `--user root` (the lab's `docker-compose.yaml`
 sets `user: root` on every gateway for exactly this reason). It's a useful reminder that **file
 ownership is part of what an image carries**. Full working stand-alone command is in
-[`exercises/block-c.md`](../exercises/block-c.md) and printed by `scripts/build-image.sh`.
+[`exercises/lab.md`](../exercises/lab.md) and printed by `scripts/build-image.sh`.
 
 ## Gateway stuck in `RUNNING / COMMISSIONING` (stand-alone run)
 
@@ -163,5 +163,5 @@ scripts/validate.sh      # JSON + .dockerignore + hadolint + actionlint — mirr
 scripts/build-image.sh   # confirm the image actually builds
 ```
 
-Still stuck? The instructor answer keys ([block-c-key.md](../instructor-notes/block-c-key.md),
-[block-d-key.md](../instructor-notes/block-d-key.md)) have deeper failure-mode walkthroughs.
+Still stuck? The instructor answer key ([lab-key.md](../instructor-notes/lab-key.md)) has deeper
+failure-mode walkthroughs.
