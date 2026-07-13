@@ -290,10 +290,10 @@ scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB + runner</
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx"><span class="inlinecode">scripts/build-image.sh</span> builds and tags <b>:sha-&lt;short&gt;</b> + <b>:local</b>. It passes <span class="inlinecode">--build-arg GIT_SHA=$(git rev-parse --short HEAD)</span> for you.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><span class="inlinecode">docker history</span> shows the baked layers, newest on top. Which one is biggest?</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx">Read the <b>revision label</b> back and confirm it matches <span class="inlinecode">git rev-parse --short HEAD</span>. That's how you trace any container to its commit.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><span class="inlinecode">touch</span> a project file, rebuild → the modules/config layers say <b>CACHED</b>; only <span class="inlinecode">projects/</span> rebuilds.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx">Now touch something in <span class="inlinecode">third-party-modules/</span> and rebuild, and notice <b>more</b> layers bust. Why?</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><span class="inlinecode">docker history</span> shows the baked layers, newest on top. Which layer has the biggest size?</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx">Read the <b>revision label</b> back and confirm it matches the last commit. That's how you trace any container to its commit.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">The trap first: <span class="inlinecode">touch</span> a project file, rebuild → <b>everything</b> still says <b>CACHED</b>. Docker keys the cache on file <b>contents</b>, not timestamps.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx">Make a <b>real</b> change (append a newline), rebuild → only <span class="inlinecode">projects/</span> rebuilds. Then drop a new dummy file into <span class="inlinecode">third-party-modules/</span>, rebuild, and notice <b>more</b> layers bust. Why? (Delete the dummy afterwards.)</div></div>
       </div>
       <div>
         <div class="code"><pre>scripts/build-image.sh
@@ -303,13 +303,18 @@ docker history cicd-lab-05-ignition:local
 docker inspect -f <span class="cmd2">'{{ index .Config.Labels
   "org.opencontainers.image.revision" }}'</span> \
   cicd-lab-05-ignition:local
+git rev-parse --short HEAD
 
-<span class="cm"># step 4: bust only the bottom layer</span>
+<span class="cm"># step 4: touch → still all CACHED</span>
 touch projects/example-project/project.json
-scripts/build-image.sh   <span class="cm"># watch for CACHED</span></pre></div>
+scripts/build-image.sh
+
+<span class="cm"># step 5: a content change busts projects/</span>
+printf '\n' &gt;&gt; projects/example-project/project.json
+scripts/build-image.sh</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Layer order</span>
-          <p>A busted layer busts <b>everything after it</b>. Least-volatile first, most-volatile last: that's why your daily project edits rebuild in seconds.</p>
+          <p>A busted layer busts <b>everything after it</b>. Least-volatile first, most-volatile last: that's why your daily project edits rebuild in seconds. And "changed" means <b>bytes</b>, not metadata — the cache checksums content, so a <span class="inlinecode">touch</span> busts nothing.</p>
         </div>
       </div>
     </div>

@@ -105,12 +105,17 @@ Together, build and dissect the image.
    ```
    That label is how you trace any running container back to the commit it was built from.
 
-2. **Prove the layer cache.** Build once (done). Now touch a project file and rebuild — watch which layers say `CACHED`:
+2. **Prove the layer cache.** Build once (done). First, a trap — `touch` a project file and rebuild:
    ```bash
    touch projects/example-project/project.json
    scripts/build-image.sh
    ```
-   The modules/config layers are `CACHED`; only the `projects/` layer (and anything after it) rebuilds. Then touch `third-party-modules/` instead and rebuild — notice *more* layers bust because that layer is higher up.
+   Every layer still says `CACHED`. Docker keys the `COPY` cache on a checksum of file *contents*; timestamps are invisible to it. Now make a real change and rebuild:
+   ```bash
+   printf '\n' >> projects/example-project/project.json   # any content change works
+   scripts/build-image.sh
+   ```
+   The modules/config layers stay `CACHED`; only the `projects/` layer (and anything after it) rebuilds. Then drop a new dummy file into `third-party-modules/` and rebuild — notice *more* layers bust because that `COPY` sits higher in the Dockerfile. (A *new* file **is** a content change. Delete the dummy again afterwards, or it ships in every future build.)
 
 3. **See what `.dockerignore` kept out.** Compare the build context size with and without it:
    ```bash

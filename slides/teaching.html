@@ -469,7 +469,7 @@ LABEL org.opencontainers.image.revision=<span class="hl">"${GIT_SHA}"</span></pr
       </div>
       <div class="rule">
         <div class="rh">See it yourself</div>
-        <p><code>touch projects/example-project/project.json</code> then rebuild, and watch which layers print <code>CACHED</code> in the build output.</p>
+        <p>Rebuild after <code>touch projects/example-project/project.json</code> — everything still prints <code>CACHED</code>: the cache checksums <b>content</b>, not timestamps. Now append a newline to that file and rebuild: only the <code>projects/</code> layer rebuilds.</p>
       </div>
     </div>
   </div>
@@ -917,12 +917,12 @@ function bindControls(slideEl,ctrl){
   const order=['base','modl','mjson','cfg','proj']; // bottom → top
   const lead=slide.querySelector('#lstack-step');
   // steps: 0 = plain stack · 1 = all cached (rebuild, nothing changed)
-  // 2 = touch a project file → only proj busts · 3 = touch a .modl → modl + everything after busts
+  // 2 = edit a project file → only proj busts · 3 = change a .modl → modl + everything after busts
   const steps=[
     {bustFrom:null, cached:false, t:'Five layers, bottom-up. Docker reuses any layer whose inputs didn\'t change.'},
     {bustFrom:null, cached:true,  t:'Rebuild with <b>nothing changed</b> → every layer is <b>CACHED</b>. The rebuild is near-instant.'},
     {bustFrom:'proj', cached:true, t:'Edit a Perspective view → only the <b>projects/ layer rebuilds</b>. The big modules layer stays cached. Cheap.'},
-    {bustFrom:'modl', cached:true, t:'Touch a <b>.modl</b> file → that layer <b>and everything after it</b> rebuilds. That\'s why the volatile stuff goes last.'}
+    {bustFrom:'modl', cached:true, t:'Change a <b>.modl</b> file → that layer <b>and everything after it</b> rebuilds. That\'s why the volatile stuff goes last.'}
   ];
   controllers.lstack={max:steps.length-1,render(s){
     const st=steps[s];
