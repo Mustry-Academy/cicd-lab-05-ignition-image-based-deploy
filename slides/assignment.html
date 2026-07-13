@@ -187,11 +187,8 @@ body{
     <div class="sechead"><span class="num">READ FIRST</span><div><div class="title">How this works</div></div></div>
     <ul class="checks" style="max-width:940px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Share your screen</b> in your breakout room, and we'll drop in where it's useful.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The exercise file is the source of truth:</b> <span class="inlinecode">exercises/lab.md</span>. These slides are the map, not the territory.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Pre-flight:</b> <span class="inlinecode">cp .env.example .env</span> then <span class="inlinecode">scripts/setup.sh</span> (idempotent, so it's safe if the stack is already up). You need Docker with Compose v2 and <b>≥ 8 GB free RAM</b>.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Everything runs locally today.</b> No fork with Actions, no PAT, no registry account: a gateway image is ~2 GB, and uploading that from a course laptop is not a good use of your hour. The registry legs of the pipeline were covered in the teaching; here you do build, tag and run.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Stuck? </b><span class="inlinecode">docs/TROUBLESHOOTING.md</span> first; most issues are one of the first three entries. Don't read <span class="inlinecode">instructor-notes/</span> until you've finished the solo work.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Trial mode:</b> gateways run 2-hour trials; reset via <i>Config → Licensing → Reset Trial</i>. The dev gateway gets a fresh trial clock on every deploy anyway (fresh container).</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Everything runs locally today.</b> A gateway image is ~2 GB, and uploading that from a course laptop is not a good use of your hour. The registry legs of the pipeline were covered in the teaching; here you do build, tag and run.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Stuck? </b><span class="inlinecode">docs/TROUBLESHOOTING.md</span> first; most issues are one of the first three entries.</span></li>
     </ul>
     <div class="goal good-g">
       <span class="badge">Ask early</span>
@@ -237,7 +234,52 @@ body{
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>We-do → Part 1 → Part 2</span></div>
 </section>
 
-<!-- 4 · WE DO C·1 · BUILD + PROVENANCE + CACHE -->
+<!-- 4 · SETUP · FORK & CLONE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Before you start · setup</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: fork this lab, clone it, bring the stack up</div><div class="lead">Everything runs locally today, so strictly speaking a plain clone would do — but fork anyway, <b>like every previous lab</b>: all the repos end up in your own account, and the CI legs (<span class="inlinecode">deploy.yml</span> / <span class="inlinecode">release.yml</span>) are ready if you want them later.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx">Go to your lab parent folder <span class="inlinecode">~/mustry-academy/</span> — all the lab repos live side by side, one folder per lab. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. No need to enable Actions today — nothing in the assignment triggers a workflow.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins and the pre-provisioned <span class="inlinecode">cicd</span> API key work as shipped on all three gateways. The <span class="inlinecode">RUNNER_*</span> vars only matter for the optional CI path.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>. Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>dev</b> (:8089) and <b>prod</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. The <span class="inlinecode">lab05-runner</span> container will restart-loop on the placeholder PAT; <b>ignore it today</b>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1: the parent folder, all labs side by side</span>
+cd ~/mustry-academy
+
+<span class="cm"># 2: fork to your account + clone your fork</span>
+gh repo fork mustry-academy/cicd-lab-05-ignition-image-based-deploy --clone
+<span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
+git clone git@github.com:&lt;your-username&gt;/cicd-lab-05-ignition-image-based-deploy.git
+cd cicd-lab-05-ignition-image-based-deploy
+
+<span class="cm"># 3: copy the env file — change NOTHING today</span>
+cp .env.example .env
+
+<span class="cm"># 4: origin → YOUR username? good.</span>
+git remote -v
+
+<span class="cm"># 5: open VS Code, then bring the stack up</span>
+code .
+scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB + runner</span></pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Why fork at all?</span>
+          <p>Consistency and ownership. Your fork is <b>your</b> copy of the whole course: every lab you forked stays in your account after the masterclass, and if you later flip on the CI legs, the workflows push images to <b>your own</b> GHCR namespace — no extra setup.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Setup · fork &amp; clone → .env → setup.sh</span></div>
+</section>
+
+<!-- 5 · WE DO C·1 · BUILD + PROVENANCE + CACHE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -275,7 +317,7 @@ scripts/build-image.sh   <span class="cm"># watch for CACHED</span></pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>We-do 1 of 2</span></div>
 </section>
 
-<!-- 5 · WE DO C·2 · READ THE IMAGE + STANDALONE RUN -->
+<!-- 6 · WE DO C·2 · READ THE IMAGE + STANDALONE RUN -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -313,7 +355,7 @@ docker run --rm <span class="cmd2">--user root</span> -p 9088:8088 \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>We-do 2 of 2 → now go solo</span></div>
 </section>
 
-<!-- 6 · PART 1 DIVIDER -->
+<!-- 7 · PART 1 DIVIDER -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -332,7 +374,7 @@ docker run --rm <span class="cmd2">--user root</span> -p 9088:8088 \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · Parts 1.1 → 1.3</span></div>
 </section>
 
-<!-- 7 · PART 1.1 · BAKE A CHANGE -->
+<!-- 8 · PART 1.1 · BAKE A CHANGE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -362,7 +404,7 @@ docker run --rm --entrypoint cat \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1.1 · 15 min</span></div>
 </section>
 
-<!-- 8 · PART 1.2 + 1.3 · DOCKERIGNORE + TAGS -->
+<!-- 9 · PART 1.2 + 1.3 · DOCKERIGNORE + TAGS -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -399,7 +441,7 @@ docker images cicd-lab-05-ignition
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Parts 1.2–1.3 · 20 min</span></div>
 </section>
 
-<!-- 9 · PART 1 DEFINITION OF DONE -->
+<!-- 10 · PART 1 DEFINITION OF DONE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -423,7 +465,7 @@ docker images cicd-lab-05-ignition
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → Part 2</span></div>
 </section>
 
-<!-- 10 · PART 2 DIVIDER -->
+<!-- 11 · PART 2 DIVIDER -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -442,7 +484,7 @@ docker images cicd-lab-05-ignition
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · Parts 2.1 → 2.3</span></div>
 </section>
 
-<!-- 11 · WHY LOCAL, NOT GITHUB -->
+<!-- 12 · WHY LOCAL, NOT GITHUB -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -476,7 +518,7 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Same Actions, same commands, no transport</span></div>
 </section>
 
-<!-- 12 · PART 2.1 · DEPLOY TO DEV -->
+<!-- 13 · PART 2.1 · DEPLOY TO DEV -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -516,7 +558,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.1 · 10 min</span></div>
 </section>
 
-<!-- 12 · PART 2.2 · SHIP A CHANGE END TO END -->
+<!-- 14 · PART 2.2 · SHIP A CHANGE END TO END -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -557,7 +599,7 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.2 · 15 min</span></div>
 </section>
 
-<!-- 13 · PART 2.3 · ROLLBACK -->
+<!-- 15 · PART 2.3 · ROLLBACK -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -589,7 +631,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.3 · 10 min</span></div>
 </section>
 
-<!-- 14 · PART 2 DEFINITION OF DONE -->
+<!-- 16 · PART 2 DEFINITION OF DONE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -613,7 +655,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → debrief</span></div>
 </section>
 
-<!-- 15 · DONE -->
+<!-- 17 · DONE -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
