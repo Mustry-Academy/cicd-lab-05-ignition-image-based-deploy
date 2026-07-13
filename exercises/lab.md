@@ -147,26 +147,37 @@ Together, build and dissect the image.
 
 ## You do (40 min)
 
-### Part 1.1 — Bake a module-manifest change into the image (15 min)
+### Part 1.1 — Bake a one-line change into the image (15 min)
 
-Change what the gateway boots with by changing **the artifact**. Pick a module that's present in `third-party-modules/` but not yet enabled, and turn it on **through the image**.
+Change **the artifact**, not a running gateway. In Lab 04 you'd have copied this file onto a live gateway and called the scan API; here the change becomes an image layer.
 
-1. Open [`services/modules.json`](../services/modules.json) and the compose `GATEWAY_MODULES_ENABLED` list to see what's available.
-2. Enable one more module (edit `services/modules.json`, or confirm it's in the enabled list).
-3. Rebuild: `scripts/build-image.sh`.
+1. Open [`projects/example-project/project.json`](../projects/example-project/project.json) — the project's metadata: `title`, `description`, `enabled`.
+2. Change the `description` to something unmistakably yours, e.g. `"Example Project — baked by <your name>"`.
+3. Rebuild: `scripts/build-image.sh`. Watch the build output: only the `projects/` layer rebuilds — the cache lesson from the we-do, live.
 4. Prove it's baked in **without running a gateway** (override the entrypoint so the container runs
    `cat` instead of booting the gateway):
    ```bash
-   docker run --rm --entrypoint cat cicd-lab-05-ignition:local /usr/local/bin/ignition/data/modules.json
+   docker run --rm --entrypoint cat cicd-lab-05-ignition:local \
+     /usr/local/bin/ignition/data/projects/example-project/project.json
    ```
-   The change is in the image's layer: it is now part of the artifact. Every gateway that ever runs this image boots with it. No copy step to script, no file to forget.
+   Your description comes back out of the image layer: it is now part of the artifact. Every gateway that ever runs this image serves it. No copy step to script, no file to forget.
 
-### Part 1.2 — Extend `.dockerignore` and verify (10 min)
+### Part 1.2 — Prove a secret leaks into the context, then fence it out (10 min)
 
-1. Add a throwaway file that should never reach the image: `echo secret > NOTES.local`.
-2. Rebuild and check whether it leaked into the context. The cleanest check: add a temporary `COPY . /tmp/ctx` is overkill — instead reason about it. `NOTES.local` is **not** matched by any current pattern, so it *would* be in the context.
-3. Add a pattern to `.dockerignore` (e.g. `*.local`) so it's excluded. Re-run `scripts/validate.sh` — the `.dockerignore` sanity check should still pass (your new pattern doesn't remove the required ones).
-4. Delete `NOTES.local` when done.
+The build context is everything Docker *can* see. One careless `COPY . .` — now, or in a refactor two years from now — and anything in the context ships inside a pullable artifact. `.dockerignore` is the backstop. Watch it fail, then fix it:
+
+1. Play the villain: `echo secret > NOTES.local` — a stand-in for the scratch notes, exports, and credential files that accumulate in every real repo.
+2. **See it leak.** Re-run the probe build from the we-do and list the context:
+   ```bash
+   docker build -q -t ctx-probe -f- . <<'EOF'
+   FROM busybox
+   COPY . /ctx
+   EOF
+   docker run --rm ctx-probe ls /ctx   # NOTES.local — leaked
+   ```
+   Nothing bakes it into the gateway image *yet* — the Dockerfile COPYs four fixed paths — but it's one careless `COPY` away from a published image.
+3. **Fence it out.** Add a pattern to `.dockerignore` (e.g. `*.local`), re-run the probe — gone.
+4. Re-run `scripts/validate.sh` — the `.dockerignore` sanity check should still pass (your new pattern doesn't remove the required ones). Delete `NOTES.local` when done.
 
 ### Part 1.3 — Give one build several tags, and trace it (10 min)
 
@@ -184,9 +195,9 @@ You're finished with part 1 when:
 
 - [ ] `scripts/build-image.sh` builds the image and tags it `:sha-<short>` + `:local`.
 - [ ] You ran the image **with no bind mounts** and saw `example-project` load — proving it's self-contained.
-- [ ] You baked a module/config change into the image and confirmed it via `docker run --entrypoint cat … modules.json` (no running gateway needed).
+- [ ] You baked a project change into the image and confirmed it via `docker run --entrypoint cat … project.json` (no running gateway needed).
 - [ ] You can explain the Dockerfile's layer order in terms of cache busting.
-- [ ] You extended `.dockerignore` and `scripts/validate.sh` still passes.
+- [ ] You proved a file leaks into the build context, fenced it out with `.dockerignore`, and `scripts/validate.sh` still passes.
 - [ ] You can trace a built image back to its commit via the `revision` label.
 
 ## Stretch challenge `[OPTIONAL]`
@@ -237,7 +248,7 @@ Together, we deploy the part 1 image to the dev gateway once:
    `image:`; compose sees a new image and recreates the container.
 3. **Wait for RUNNING:** `curl -s localhost:8089/StatusPing` until it prints
    RUNNING (a fresh-image boot re-commissions the gateway — give it a few minutes).
-4. **Verify:** http://localhost:8089 → example-project is there, plus the module change you baked in part 1. No copy, no scan: the container was **replaced**. Inspect again — dev now runs your image.
+4. **Verify:** http://localhost:8089 → example-project is there — and so is the description you baked in part 1 (`docker exec lab05-ignition-dev cat data/projects/example-project/project.json`). No copy, no scan: the container was **replaced**. Inspect again — dev now runs your image.
 5. **What persisted:** historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.
 
 ## You do (40 min)

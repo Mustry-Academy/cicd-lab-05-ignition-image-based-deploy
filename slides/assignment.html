@@ -365,8 +365,8 @@ du -sh .git</pre></div>
     <div class="title" style="color:#fff;max-width:26ch">Bake a change into the image and prove it's self-contained</div>
     <p class="lead">Three parts, in order. Everything runs locally, no GitHub needed.</p>
     <ul class="checks" style="margin-top:22px;max-width:900px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 1.1:</b> bake a module-manifest change into the image and read it back (15 min).</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 1.2:</b> extend <span class="mono" style="color:#dbe4f0">.dockerignore</span> and keep <span class="mono" style="color:#dbe4f0">validate.sh</span> green (10 min).</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 1.1:</b> bake a one-line project change into the image and read it back (15 min).</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 1.2:</b> prove a secret leaks into the build context, then fence it out with <span class="mono" style="color:#dbe4f0">.dockerignore</span> (10 min).</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 1.3:</b> give one build several tags, and trace it to its commit (10 min).</span></li>
     </ul>
   </div>
@@ -380,19 +380,19 @@ du -sh .git</pre></div>
     <div class="stage">Part 1.1</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">PART 1.1</span><div><div class="title">Bake a module-manifest change into the image</div><div class="lead">Change what the gateway boots with by changing <b>the artifact</b>, then prove the change is in the image without ever starting a gateway.</div></div></div>
+    <div class="sechead"><span class="num">PART 1.1</span><div><div class="title">Bake a one-line change into the image</div><div class="lead">Change <b>the artifact</b>, not a running gateway — then prove the change is in the image without ever starting one.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx">Open <span class="inlinecode">services/modules.json</span> and the compose <span class="inlinecode">GATEWAY_MODULES_ENABLED</span> list, and see what's available vs. what's on.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx">Enable one more module (edit <span class="inlinecode">services/modules.json</span>, or confirm it's in the enabled list).</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx">Rebuild: <span class="inlinecode">scripts/build-image.sh</span>.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx">Open <span class="inlinecode">projects/example-project/project.json</span> — the project's metadata: <span class="inlinecode">title</span>, <span class="inlinecode">description</span>, <span class="inlinecode">enabled</span>.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx">Change the <span class="inlinecode">description</span> to something unmistakably yours, e.g. <span class="inlinecode">"Example Project — baked by &lt;you&gt;"</span>.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx">Rebuild: <span class="inlinecode">scripts/build-image.sh</span>. Watch the output: only the <span class="inlinecode">projects/</span> layer rebuilds — the we-do cache lesson, live.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx">Prove it's baked in <b>without running a gateway</b>: override the entrypoint so the container runs <span class="inlinecode">cat</span> instead of booting.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># step 4: read the manifest out of the image layer</span>
+        <div class="code"><pre><span class="cm"># step 4: read the file out of the image layer</span>
 docker run --rm --entrypoint cat \
   cicd-lab-05-ignition:local \
-  /usr/local/bin/ignition/data/modules.json</pre></div>
+  /usr/local/bin/ignition/data/projects/example-project/project.json</pre></div>
         <div class="goal good-g" style="margin-top:18px">
           <span class="badge">The point</span>
           <p>The change is now <b>part of the artifact</b>. Every gateway that ever runs this image boots with it: no copy step to script, no file to forget. That's what "the image is the deploy spec" means.</p>
@@ -403,44 +403,80 @@ docker run --rm --entrypoint cat \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1.1 · 15 min</span></div>
 </section>
 
-<!-- 9 · PART 1.2 + 1.3 · DOCKERIGNORE + TAGS -->
+<!-- 9 · PART 1.2 · CONTEXT LEAK + DOCKERIGNORE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Parts 1.2–1.3</div>
+    <div class="stage">Part 1.2</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">PARTS 1.2–1.3</span><div><div class="title">Extend .dockerignore, then give one build several tags</div><div class="lead">Part 1.2: keep a file that must never ship out of the build context. Part 1.3: see that tags are just names, and one of them should always be immutable.</div></div></div>
+    <div class="sechead"><span class="num">PART 1.2</span><div><div class="title">Prove a secret leaks into the build context, then fence it out</div><div class="lead">The context is everything Docker <b>can</b> see. One careless <span class="inlinecode">COPY . .</span> — now, or in a refactor two years from now — and anything in it ships inside a pullable artifact. <span class="inlinecode">.dockerignore</span> is the backstop.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1.2.</b> Add a throwaway file that must never reach the image: <span class="inlinecode">echo secret &gt; NOTES.local</span>.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx">Reason about it: no current pattern matches <span class="inlinecode">NOTES.local</span>, so it <b>would</b> be in the context. Add a pattern (e.g. <span class="inlinecode">*.local</span>) to <span class="inlinecode">.dockerignore</span>.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx">Re-run <span class="inlinecode">scripts/validate.sh</span>: the sanity check must still pass (your pattern didn't remove required ones). Delete <span class="inlinecode">NOTES.local</span> when done.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx"><b>Part 1.3.</b> Build with an extra moving tag: three tags, <b>one image ID</b>.</div></div>
-        <div class="step"><div class="ix">5</div><div class="tx">Read the <b>revision label</b> off the <span class="inlinecode">:sha-&lt;short&gt;</span> tag; confirm it matches <span class="inlinecode">git rev-parse --short HEAD</span>.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx">Play the villain: <span class="inlinecode">echo secret &gt; NOTES.local</span> — a stand-in for the scratch notes, exports, and credential files that accumulate in every real repo.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>See it leak.</b> Dump the context with the probe build from the we-do: <span class="inlinecode">NOTES.local</span> is in there. Nothing bakes it <i>yet</i> — the Dockerfile COPYs four fixed paths — but it's one careless <span class="inlinecode">COPY</span> away from a published image.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Fence it out.</b> Add a pattern (e.g. <span class="inlinecode">*.local</span>) to <span class="inlinecode">.dockerignore</span>, re-run the probe → gone.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx">Re-run <span class="inlinecode">scripts/validate.sh</span>: must stay green (your pattern didn't remove the required exclusions). Delete <span class="inlinecode">NOTES.local</span> when done.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># part 1.2: the context guard</span>
-echo secret &gt; NOTES.local
-<span class="cm"># add "*.local" to .dockerignore, then:</span>
-scripts/validate.sh
-rm NOTES.local
+        <div class="code"><pre>echo secret &gt; NOTES.local
 
-<span class="cm"># part 1.3: moving + immutable tags coexist</span>
-scripts/build-image.sh --tag dev
-docker images cicd-lab-05-ignition
-<span class="cm"># :sha-&lt;short&gt;  :local  :dev all share one IMAGE ID</span></pre></div>
-        <div class="goal" style="margin-top:18px">
-          <span class="badge">Foreshadow</span>
-          <p>The immutable <span class="inlinecode">:sha-…</span> tag is what makes part 2's <b>rollback</b> trivial: every build keeps a name that never moves, so "go back" means "run yesterday's name".</p>
+<span class="cm"># the probe: what can Docker see?</span>
+docker build -q -t ctx-probe -f- . &lt;&lt;'EOF'
+FROM busybox
+COPY . /ctx
+EOF
+docker run --rm ctx-probe ls /ctx   <span class="cm"># NOTES.local — leaked</span>
+
+<span class="cm"># add "*.local" to .dockerignore → re-probe: gone</span>
+scripts/validate.sh
+rm NOTES.local</pre></div>
+        <div class="goal warn-g" style="margin-top:18px">
+          <span class="badge">Why this matters</span>
+          <p>The line in the shipped <span class="inlinecode">.dockerignore</span> that really matters is <span class="inlinecode">.env</span>: an image that bakes credentials <b>publishes them</b> the moment it's pushed to a registry. <span class="inlinecode">.dockerignore</span> isn't a speed tweak — it's the backstop that makes that accident impossible.</p>
         </div>
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Parts 1.2–1.3 · 20 min</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1.2 · 10 min</span></div>
 </section>
 
-<!-- 10 · PART 1 DEFINITION OF DONE -->
+<!-- 10 · PART 1.3 · TAGS -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 1.3</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">PART 1.3</span><div><div class="title">Give one build several tags, and trace it to its commit</div><div class="lead">A tag is just a name pointing at an image ID. Pipelines lean on two kinds: <b>moving</b> names like <span class="inlinecode">:dev</span>, and <b>immutable</b> names like <span class="inlinecode">:sha-…</span> or a release version like <span class="inlinecode">:v1.4.2</span>.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix">1</div><div class="tx">Build with an extra moving tag, the way a pipeline would tag <span class="inlinecode">:dev</span>.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><span class="inlinecode">docker images</span> → three tags, <b>one image ID</b>: <span class="inlinecode">:sha-&lt;short&gt;</span>, <span class="inlinecode">:local</span>, <span class="inlinecode">:dev</span>. Same bytes, three names.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx">Read the <b>revision label</b> off the <span class="inlinecode">:sha-&lt;short&gt;</span> tag; confirm it matches <span class="inlinecode">git rev-parse --short HEAD</span>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># moving + immutable tags coexist</span>
+scripts/build-image.sh --tag dev
+docker images cicd-lab-05-ignition
+<span class="cm"># :sha-&lt;short&gt;  :local  :dev all share one IMAGE ID</span>
+
+<span class="cm"># trace the immutable tag to its commit</span>
+docker inspect -f <span class="cmd2">'{{ index .Config.Labels
+  "org.opencontainers.image.revision" }}'</span> \
+  cicd-lab-05-ignition:sha-&lt;short&gt;
+git rev-parse --short HEAD</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Foreshadow</span>
+          <p>Immutable tags are what make part 2's <b>rollback</b> trivial: every build keeps a name that never moves, so "go back" means "run yesterday's name". <span class="inlinecode">:sha-…</span> is the machine's immutable name; a semver tag like <span class="inlinecode">:v1.4.2</span> is the human's — this repo's <span class="inlinecode">release.yml</span> mints one per <span class="inlinecode">vX.Y.Z</span> git tag.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1.3 · 10 min</span></div>
+</section>
+
+<!-- 11 · PART 1 DEFINITION OF DONE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -464,7 +500,7 @@ docker images cicd-lab-05-ignition
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → Part 2</span></div>
 </section>
 
-<!-- 11 · PART 2 DIVIDER -->
+<!-- 12 · PART 2 DIVIDER -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -483,14 +519,14 @@ docker images cicd-lab-05-ignition
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · Parts 2.1 → 2.3</span></div>
 </section>
 
-<!-- 12 · WHY LOCAL, NOT GITHUB -->
+<!-- 13 · WHY LOCAL, NOT GITHUB -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
     <div class="stage">Part 2 · read first</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">2 · READ FIRST</span><div><div class="title">Why we deploy locally today, and what GitHub Actions would do instead</div><div class="lead">In a real setup this part is automated by <b>the same Actions you built in Lab 04</b>. Today you type the workflow's commands yourself, and that is the point.</div></div></div>
+    <div class="sechead"><span class="num phase2">2 · READ FIRST</span><div><div class="title">Why we deploy locally today, and what GitHub Actions would do instead</div><div class="lead">In a real setup this part is automated by <b>the same Actions you built in Lab 04</b>. Today you type the workflow's commands yourself.</div></div></div>
     <div class="cols2">
       <ul class="checks">
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Same triggers as Lab 04.</b> A merge to <span class="inlinecode">main</span> would fire <span class="inlinecode">deploy.yml</span>, a tag would fire <span class="inlinecode">release.yml</span>. Only the steps <b>inside</b> the jobs change: build + push + pull + recreate, instead of copy + scan.</span></li>
@@ -517,7 +553,7 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Same Actions, same commands, no transport</span></div>
 </section>
 
-<!-- 13 · PART 2.1 · DEPLOY TO DEV -->
+<!-- 14 · PART 2.1 · DEPLOY TO DEV -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -530,7 +566,7 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
         <div class="step"><div class="ix p">1</div><div class="tx">Confirm dev is on the <b>base</b> image (an empty gateway).</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx">The deploy is <b>one command</b>: point the compose variable at your image and bring the service up. Compose sees a new image and recreates the container.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Wait for the gateway to come back: poll <span class="inlinecode">/StatusPing</span> until it says <b>RUNNING</b> (a fresh-image boot re-commissions, so give it a few minutes).</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx">Verify at <span class="inlinecode">http://localhost:8089</span>: <b>example-project is there</b>, plus the manifest change you baked in part 1. Then inspect: which image does dev run now?</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Verify at <span class="inlinecode">http://localhost:8089</span>: <b>example-project is there</b> — and so is your part 1 description (<span class="inlinecode">docker exec lab05-ignition-dev cat data/projects/example-project/project.json</span>). Then inspect: which image does dev run now?</div></div>
         <div class="step"><div class="ix p">5</div><div class="tx">Note what <b>persisted</b>: the historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.</div></div>
       </div>
       <div>
@@ -557,7 +593,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.1 · 10 min</span></div>
 </section>
 
-<!-- 14 · PART 2.2 · SHIP A CHANGE END TO END -->
+<!-- 15 · PART 2.2 · SHIP A CHANGE END TO END -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -598,7 +634,7 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.2 · 15 min</span></div>
 </section>
 
-<!-- 15 · PART 2.3 · ROLLBACK -->
+<!-- 16 · PART 2.3 · ROLLBACK -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -630,7 +666,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.3 · 10 min</span></div>
 </section>
 
-<!-- 16 · PART 2 DEFINITION OF DONE -->
+<!-- 17 · PART 2 DEFINITION OF DONE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -654,7 +690,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → debrief</span></div>
 </section>
 
-<!-- 17 · DONE -->
+<!-- 18 · DONE -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>

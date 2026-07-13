@@ -12,7 +12,7 @@ By the end of part 1, the participant has:
 
 1. Built the gateway image with `scripts/build-image.sh`, tagged `:sha-<short>` + `:local`.
 2. Run the image with **no bind mounts** and seen `example-project` load at the test port — the self-contained proof.
-3. Baked a module/config change into the image and confirmed it via `docker run … cat modules.json` (no running gateway).
+3. Baked a project change (the `description` in `project.json`) into the image and confirmed it via `docker run … cat project.json` (no running gateway).
 4. Explained the Dockerfile's layer order as a cache strategy.
 5. Extended `.dockerignore` and kept `scripts/validate.sh` green.
 6. Traced an image back to its commit via the `org.opencontainers.image.revision` label.
