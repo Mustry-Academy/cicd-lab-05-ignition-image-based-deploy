@@ -483,18 +483,27 @@ git rev-parse --short HEAD</pre></div>
     <div class="stage">Part 1 · the gate</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">1 · DONE?</span><div><div class="title">Part 1 definition of done</div><div class="lead">Walk the list in <span class="inlinecode">exercises/lab.md</span> (part 1) before you move on: part 2 deploys the image you just built.</div></div></div>
+    <div class="sechead"><span class="num">1 · DONE?</span><div><div class="title">Part 1 definition of done</div><div class="lead">All six, before you move on — part 2 deploys the image you just built.</div></div></div>
     <ul class="checks" style="max-width:960px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Built + tagged</b> <span class="inlinecode">:sha-&lt;short&gt;</span> &amp; <span class="inlinecode">:local</span>.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Ran the image <b>with no bind mounts</b> and saw example-project load.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Baked a manifest change</b> and read it back with <span class="inlinecode">--entrypoint cat</span>, without booting a gateway.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Baked a project change</b> and read it back with <span class="inlinecode">--entrypoint cat</span>, without booting a gateway.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Can explain <b>layer order as cache busting</b>.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Extended <span class="inlinecode">.dockerignore</span> with <span class="inlinecode">validate.sh</span> still green.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Proved a context leak with the probe, fenced it out via <span class="inlinecode">.dockerignore</span>, <span class="inlinecode">validate.sh</span> still green.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Traced an image to its commit via the <b>revision label</b>.</span></li>
     </ul>
-    <div class="goal warn-g">
-      <span class="badge">Debrief teaser</span>
-      <p>We pin <span class="inlinecode">8.3.6</span>, not <span class="inlinecode">:latest</span>. Why does an immutable-artifact approach <b>demand</b> a pinned base? And: which of your three tags would you never deploy by name, and why?</p>
+    <div class="cols2" style="margin-top:auto">
+      <div class="goal" style="margin-top:0">
+        <span class="badge">Done early?</span>
+        <p>Stretch goals: shrink the context further and watch <span class="inlinecode">transferring context</span> drop · layer forensics with <span class="inlinecode">docker history --no-trunc</span> · when would a <b>multi-stage build</b> earn its keep here?</p>
+      </div>
+      <div class="goal warn-g" style="margin-top:0">
+        <span class="badge">Debrief · 10 min</span>
+        <p>· Where does dev/prod <b>runtime state</b> (internal DB, logs) go, and why is it safe to lose on deploy?<br>
+           · Why does an immutable-artifact approach <b>demand a pinned base</b>, never <span class="inlinecode">:latest</span>?<br>
+           · Lab 04's <span class="inlinecode">.deployignore</span> was your shell loop; <span class="inlinecode">.dockerignore</span> is the tool's. What does moving it <b>into the tool</b> buy?<br>
+           · Which of your three tags would you <b>never deploy by name</b>, and why?</p>
+      </div>
     </div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → Part 2</span></div>
@@ -673,7 +682,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
     <div class="stage">Part 2 · the gate</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">2 · DONE?</span><div><div class="title">Part 2 definition of done</div><div class="lead">Walk the list in <span class="inlinecode">exercises/lab.md</span> (part 2): the rollback is the one we'll ask you about.</div></div></div>
+    <div class="sechead"><span class="num phase2">2 · DONE?</span><div><div class="title">Part 2 definition of done</div><div class="lead">All six, before the debrief — the rollback is the one we'll ask you about.</div></div></div>
     <ul class="checks" style="max-width:960px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>The dev gateway (:8089) runs <b>your</b> image, and you proved it with <span class="inlinecode">docker inspect</span>.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on dev.</span></li>
@@ -682,9 +691,18 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You checked that the <b>historian data survived</b> both deploys, and can say why.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You can name the two steps a production pipeline adds between your build and your run (push + pull), and why we skipped them today.</span></li>
     </ul>
-    <div class="goal warn-g">
-      <span class="badge">Fresh gateway alert</span>
-      <p>Each deploy gave dev a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, experienced first-hand.</p>
+    <div class="cols2" style="margin-top:auto">
+      <div class="goal warn-g" style="margin-top:0">
+        <span class="badge">Fresh gateway alert</span>
+        <p>Each deploy gave dev a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, first-hand. <b>Done early?</b> Two stretch directions in <span class="inlinecode">lab.md</span>: deeper image forensics, or a first taste of Lab 06.</p>
+      </div>
+      <div class="goal" style="margin-top:0">
+        <span class="badge">Debrief · 10 min</span>
+        <p>· File-based vs image-based, having now run both: which would you pick for <b>your</b> plant?<br>
+           · The rollback took <b>one command</b> — what made it that cheap?<br>
+           · Which state at your plant could <b>not</b> survive a fresh gateway, and where would you move it?<br>
+           · Put a registry in the middle: what changes, and what stays exactly the same?</p>
+      </div>
     </div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → debrief</span></div>
