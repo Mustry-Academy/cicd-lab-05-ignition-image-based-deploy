@@ -292,8 +292,8 @@ scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB + runner</
         <div class="step"><div class="ix t">1</div><div class="tx"><span class="inlinecode">scripts/build-image.sh</span> builds and tags <b>:sha-&lt;short&gt;</b> + <b>:local</b>. It passes <span class="inlinecode">--build-arg GIT_SHA=$(git rev-parse --short HEAD)</span> for you.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><span class="inlinecode">docker history</span> shows the baked layers, newest on top. Which layer has the biggest size?</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx">Read the <b>revision label</b> back and confirm it matches the last commit. That's how you trace any container to its commit.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">The trap first: <span class="inlinecode">touch</span> a project file, rebuild → <b>everything</b> still says <b>CACHED</b>. Docker keys the cache on file <b>contents</b>, not timestamps.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx">Make a <b>real</b> change (append a newline), rebuild → only <span class="inlinecode">projects/</span> rebuilds. Then drop a new dummy file into <span class="inlinecode">third-party-modules/</span>, rebuild, and notice <b>more</b> layers bust. Why? (Delete the dummy afterwards.)</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Change a project file (e.g. change the perspective view size) and rebuild. Docker <b>checksums the content</b> of each <span class="inlinecode">COPY</span>'s inputs: the changed bytes bust the <span class="inlinecode">projects/</span> layer, but every layer above it stays <b>CACHED</b>, so the rebuild takes seconds.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx">Now drop a dummy file into <span class="inlinecode">third-party-modules/</span> and rebuild. That <span class="inlinecode">COPY</span> sits <b>higher</b> in the Dockerfile, and a busted layer rebuilds <b>everything after it</b>: modules, config <i>and</i> projects all re-copy. Delete the dummy afterwards — or it ships in every future build.</div></div>
       </div>
       <div>
         <div class="code"><pre>scripts/build-image.sh
@@ -305,13 +305,13 @@ docker inspect -f <span class="cmd2">'{{ index .Config.Labels
   cicd-lab-05-ignition:local
 git rev-parse --short HEAD
 
-<span class="cm"># step 4: touch → still all CACHED</span>
-touch projects/example-project/project.json
+<span class="cm"># step 4: a content change busts projects/ only</span>
 scripts/build-image.sh
 
-<span class="cm"># step 5: a content change busts projects/</span>
-printf '\n' &gt;&gt; projects/example-project/project.json
-scripts/build-image.sh</pre></div>
+<span class="cm"># step 5: a new file higher up busts much more</span>
+echo test &gt; third-party-modules/dummy.txt
+scripts/build-image.sh
+rm third-party-modules/dummy.txt</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Layer order</span>
           <p>A busted layer busts <b>everything after it</b>. Least-volatile first, most-volatile last: that's why your daily project edits rebuild in seconds. And "changed" means <b>bytes</b>, not metadata — the cache checksums content, so a <span class="inlinecode">touch</span> busts nothing.</p>
@@ -329,31 +329,25 @@ scripts/build-image.sh</pre></div>
     <div class="stage">We do · together · Part 1</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">WE DO · 2</span><div><div class="title">Read what got baked, then run the image with nothing mounted</div><div class="lead">The self-contained proof: the project shows up because it's <b>inside the image</b>, with no <span class="inlinecode">./projects</span> mount and no scan call.</div></div></div>
+    <div class="sechead"><span class="num warm">WE DO · 2</span><div><div class="title">Run the image with nothing mounted, and read what got baked</div><div class="lead">The self-contained proof: the project shows up because it's <b>inside the image</b>, with no <span class="inlinecode">./projects</span> mount and no scan call.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">See what <span class="inlinecode">.dockerignore</span> kept out of the context: <span class="inlinecode">du -sh .git</span> is usually the biggest single chunk.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx">List what actually got baked: <b>read the image, not the repo</b>. Note the <span class="inlinecode">--entrypoint</span>: the IA image otherwise treats trailing args as gateway arguments.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx">Run the image on a spare port with <b>no bind mounts</b> (see command). Wait ~30 to 60 s for <i>"Starting project: example-project"</i> in the log.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">Open <span class="inlinecode">http://localhost:9088</span> → <b>example-project is there.</b> Ctrl-C stops it; <span class="inlinecode">--rm</span> cleans up.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx">Run the image on a spare port with <b>no bind mounts</b> (see command). A gateway boot takes ~30 to 60 s — start it now, let it run, and carry on with the next steps while it comes up.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx">Once the log prints <i>"Starting project: example-project"</i>, open <span class="inlinecode">http://localhost:9088</span> → <b>example-project is there.</b> Ctrl-C stops it; <span class="inlinecode">--rm</span> cleans up.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx">Meanwhile: see what <span class="inlinecode">.dockerignore</span> kept out. Your build output already measured it: the <span class="inlinecode">transferring context: ~60 MB</span> line, versus <span class="inlinecode">du -sh .</span> ≈ 130 MB on disk. The gap — mostly <span class="inlinecode">.git</span> — never reached Docker.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Explore what actually got baked: <b>read the image, not the repo</b>. Open the image in Docker Desktop (<i>Images → cicd-lab-05-ignition → Files</i>) — or whatever image browser you prefer — and find all four <span class="inlinecode">COPY</span>ed artifacts: <span class="inlinecode">data/projects/</span>, <span class="inlinecode">data/config/</span>, <span class="inlinecode">data/modules.json</span>, <span class="inlinecode">/third-party-modules</span>. Note what's <b>not</b> there: <span class="inlinecode">README.md</span>, <span class="inlinecode">docs/</span>, <span class="inlinecode">.env</span>.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># step 2: what's inside the image?</span>
-docker run --rm --entrypoint find \
-  cicd-lab-05-ignition:local \
-  /usr/local/bin/ignition/data/projects -maxdepth 2
-
-<span class="cm"># step 3: the self-contained proof</span>
+        <div class="code"><pre><span class="cm"># step 1: the self-contained proof</span>
 docker run --rm <span class="cmd2">--user root</span> -p 9088:8088 \
   -e ACCEPT_IGNITION_EULA=Y -e IGNITION_EDITION=standard \
   -e GATEWAY_ADMIN_USERNAME=admin \
   -e GATEWAY_ADMIN_PASSWORD=password \
   cicd-lab-05-ignition:local \
-  -n demo -- -Dignition.allowunsignedmodules=true</pre></div>
-        <div class="goal warn-g" style="margin-top:18px">
-          <span class="badge">--user root</span>
-          <p>Drop it and the gateway <b>FAULTs</b> (<span class="inlinecode">unable to create resource dir … /.resources</span>): the baked files are root-owned. <b>File ownership is part of what you bake into an image</b>: remember the <span class="inlinecode">COPY --chown</span> lines in the production Dockerfile from the teaching.</p>
-        </div>
+  -n demo -- -Dignition.allowunsignedmodules=true
+
+<span class="cm"># step 3: check .git folder size</span>
+du -sh .git</pre></div>
       </div>
     </div>
   </div>

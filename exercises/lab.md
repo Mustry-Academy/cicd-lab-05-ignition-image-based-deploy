@@ -117,22 +117,33 @@ Together, build and dissect the image.
    ```
    The modules/config layers stay `CACHED`; only the `projects/` layer (and anything after it) rebuilds. Then drop a new dummy file into `third-party-modules/` and rebuild — notice *more* layers bust because that `COPY` sits higher in the Dockerfile. (A *new* file **is** a content change. Delete the dummy again afterwards, or it ships in every future build.)
 
-3. **See what `.dockerignore` kept out.** Compare the build context size with and without it:
+3. **See what `.dockerignore` kept out.** The build already measured it: the first lines of the
+   build output include `transferring context: ~60MB`. Compare with the folder on disk:
    ```bash
-   # what Docker would send WITHOUT .dockerignore (rough proxy):
-   du -sh --exclude=.git .
-   # the .git dir alone — excluded — is often the biggest single chunk:
-   du -sh .git
+   du -sh .      # ≈ 130 MB — the build transferred only ~60
+   du -sh .git   # the biggest excluded chunk
    ```
+   Want the definitive list of what Docker *can* see? Dump the context with a throwaway probe
+   build and list it:
+   ```bash
+   docker build -q -t ctx-probe -f- . <<'EOF'
+   FROM busybox
+   COPY . /ctx
+   EOF
+   docker run --rm ctx-probe find /ctx -maxdepth 1
+   ```
+   Only `projects/`, `services/`, and `third-party-modules/` — exactly what the Dockerfile COPYs.
 
-4. **Read the image, not the repo.** List what actually got baked under `data/projects`. The
-   Ignition base image's entrypoint treats any trailing args as *gateway* arguments, so to run a
-   plain command you override it with `--entrypoint`:
+4. **Explore the image, not the repo.** Open the image in Docker Desktop (*Images →
+   `cicd-lab-05-ignition` → Files*) — or whatever image browser you prefer — and find all four
+   things the Dockerfile COPYed: `data/projects/`, `data/config/`, `data/modules.json`, and
+   `/third-party-modules`. Note what's *not* there: `README.md`, `docs/`, `.env`. Prefer the CLI?
+   The Ignition base image's entrypoint treats trailing args as *gateway* arguments, so override
+   it with `--entrypoint`:
    ```bash
    docker run --rm --entrypoint find cicd-lab-05-ignition:local \
      /usr/local/bin/ignition/data/projects -maxdepth 2
    ```
-   It contains `example-project/` — and crucially *not* `README.md`, `docs/`, or `.env`, because `.dockerignore` kept them out of the context.
 
 ## You do (40 min)
 
