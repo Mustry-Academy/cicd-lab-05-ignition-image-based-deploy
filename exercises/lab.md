@@ -136,8 +136,9 @@ Together, build and dissect the image.
 
 4. **Explore the image, not the repo.** Open the image in Docker Desktop (*Images →
    `cicd-lab-05-ignition` → Files*) — or whatever image browser you prefer — and find all four
-   things the Dockerfile COPYed: `data/projects/`, `data/config/`, `data/modules.json`, and
-   `/third-party-modules`. Note what's *not* there: `README.md`, `docs/`, `.env`. Prefer the CLI?
+   things the Dockerfile COPYed. Three live under `/usr/local/bin/ignition/data/`: `projects/`,
+   `config/` and `modules.json`; the fourth is `/third-party-modules` at the root. Note what's
+   *not* there: `README.md`, `docs/`, `.env`. Prefer the CLI?
    The Ignition base image's entrypoint treats trailing args as *gateway* arguments, so override
    it with `--entrypoint`:
    ```bash
