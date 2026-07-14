@@ -1,8 +1,8 @@
-# PR validation — runs on every pull request into a long-lived Git Flow branch.
+# PR validation — runs on every pull request into main.
 #
-# Git Flow has two long-lived branches, so we validate PRs into both:
-#   develop  ← feature/* branches merge here (then deploy.yml ships to dev)
-#   main     ← release/* and hotfix/* branches merge here (then a tag ships to prod)
+# GitHub flow has a single long-lived branch:
+#   main  ← feature/* branches merge here via PR (then deploy.yml ships to dev,
+#           and a vX.Y.Z tag ships to prod via release.yml)
 #
 # Purpose: catch the cheap stuff before a build/deploy gets near it. Everything
 # here runs on ubuntu-latest (free, no self-hosted runner). The expensive,
@@ -17,7 +17,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}

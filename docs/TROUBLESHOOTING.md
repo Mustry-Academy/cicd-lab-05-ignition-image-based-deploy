@@ -84,7 +84,7 @@ setting on your fork:
 `release.yml` promotes the **`:dev`** image (what dev is running). If no `:dev` image exists yet, the
 re-tag fails with `manifest unknown`.
 
-- **New release (tag push):** nothing has ever been shipped to dev. Push a change to **`develop`** so
+- **New release (tag push):** nothing has ever been shipped to dev. Push a change to **`main`** so
   `deploy.yml` builds and publishes `:dev` first, then tag the release.
 - **Rollback (manual dispatch):** the version you asked to re-promote was never released — there's no
   `:vX.Y.Z` image for it. Use a version that actually shipped to prod before.
@@ -100,7 +100,7 @@ Fixed by building **multi-arch**: `deploy.yml`'s build job uses `docker/setup-qe
 Dockerfile is COPY-only, so there's nothing to emulate.)
 
 If you still see it: the existing `:dev` image in GHCR is the **old amd64-only** one. Trigger a fresh
-build (push any gateway-content change to `develop`) so a multi-arch `:dev` overwrites it, then the
+build (push any gateway-content change to `main`) so a multi-arch `:dev` overwrites it, then the
 deploy pulls cleanly. Confirm the published image is multi-arch with:
 ```bash
 docker buildx imagetools inspect ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:dev
@@ -123,7 +123,7 @@ docker buildx imagetools inspect ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:
 ## dev/prod stuck on the base image (empty gateway)
 
 That's the **default** until the first deploy — `IGNITION_DEV_IMAGE` / `IGNITION_PROD_IMAGE` are unset,
-so compose falls back to the base Ignition image. Run `deploy.yml` (push to `develop`) / `release.yml`
+so compose falls back to the base Ignition image. Run `deploy.yml` (push to `main`) / `release.yml`
 (tag on `main`), or locally `scripts/build-image.sh && scripts/deploy-image.sh dev cicd-lab-05-ignition:local`.
 
 ## The self-hosted runner is offline / jobs queue forever

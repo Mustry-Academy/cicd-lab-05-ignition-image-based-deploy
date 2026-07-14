@@ -1,11 +1,10 @@
-# Promote the tested DEV image to prod on tag push (Git Flow release).
+# Promote the tested DEV image to prod on tag push (GitHub flow release).
 #
-# Git Flow: a release is cut from `develop` via a `release/*` branch, merged into
-# `main`, and tagged `vX.Y.Z`. That tag fires this workflow. Because Git Flow's
-# merge into main creates a NEW commit SHA that has no image of its own, we do
-# NOT promote by commit — we promote the image currently running on dev (the
-# `:dev` tag, which `deploy.yml` published from `develop`). "Ship exactly what
-# dev validated."
+# GitHub flow: a release is tagging a commit on `main` with `vX.Y.Z`. That tag
+# fires this workflow. We do NOT promote by rebuilding from the tagged commit —
+# we promote the image currently running on dev (the `:dev` tag, which
+# `deploy.yml` published from `main`). "Ship exactly what dev validated": a
+# rebuild could pull a newer base layer and ship bytes dev never tested.
 #
 # The image-based payoff: we do NOT rebuild. The `:dev` image is RE-TAGGED to
 # :vX.Y.Z + :prod with a server-side manifest copy (`docker buildx imagetools
@@ -88,7 +87,7 @@ jobs:
       - name: Re-tag the tested image (no rebuild)
         # imagetools copies the manifest server-side: the prod tags point at the
         # exact same digest dev tested. If this fails with "not found":
-        #   - new release → there is no :dev image yet; push to `develop` so
+        #   - new release → there is no :dev image yet; push to `main` so
         #     deploy.yml builds and ships one first.
         #   - rollback → that version was never released (no :vX.Y.Z image).
         run: |

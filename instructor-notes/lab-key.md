@@ -72,8 +72,8 @@ By the end of part 2, the participant has:
 
 1. The bundled `github-runner` online in their fork (`self-hosted, lab05`).
 2. Two GitHub environments (`lab-gateway-dev`, `lab-gateway-prod`) — typically with **no** secrets/variables (GHCR auth is `GITHUB_TOKEN`; `IGNITION_URL` defaults are fine).
-3. Created a `develop` branch; merged a PR **into `develop`** → watched `deploy.yml`'s `build` (hosted) push to GHCR and `deploy` (self-hosted) recreate dev. Change live on :8089.
-4. Merged `develop`→`main` and pushed a `v*` tag → watched `release.yml` promote `:dev` (no rebuild) and recreate prod. Change live on :8090.
+3. Merged a PR **into `main`** → watched `deploy.yml`'s `build` (hosted) push to GHCR and `deploy` (self-hosted) recreate dev. Change live on :8089.
+4. Pushed a `v*` tag on `main` → watched `release.yml` promote `:dev` (no rebuild) and recreate prod. Change live on :8090.
 5. **Proved dev and prod run the same image digest** after a release.
 6. Rolled prod back to an earlier tag via `workflow_dispatch`.
 
@@ -115,9 +115,9 @@ Things to highlight in the grade:
 
 `release.yml` is the same shape but the first job is **promote, not build** — `imagetools create` re-tags the tested image. Make sure they notice it does **not** rebuild.
 
-### Git Flow framing (why we promote `:dev`, not a commit)
+### GitHub flow framing (why we promote `:dev`, not a rebuild)
 
-This lab is **Git Flow**: `develop` → dev gateway, `main` (tagged) → prod gateway. The subtlety worth teaching: a Git Flow release is a *merge into `main`*, which produces a **new commit SHA that no image was ever built for**. So `release.yml` can't promote "by commit" — it promotes the **`:dev` image** (what dev is running). That's both a practical necessity and the honest definition of a release: *ship what dev validated*. The `release/*` branch is the conceptual freeze point (in the exercise a plain `develop→main` merge stands in for it). If a participant asks "why not just rebuild from the tag?" — that breaks build-once/promote-many: a rebuild could pull a newer base layer and ship bytes dev never tested.
+This lab is **GitHub flow**: a merge to `main` → dev gateway, a `vX.Y.Z` tag on `main` → prod gateway. The subtlety worth teaching: `release.yml` does **not** rebuild from the tagged commit — it promotes the **`:dev` image** (what dev is running). That's the honest definition of a release: *ship what dev validated*. Tagging is the freeze point: you tag when dev is where you want prod to be. If a participant asks "why not just rebuild from the tag?" — that breaks build-once/promote-many: a rebuild could pull a newer base layer and ship bytes dev never tested.
 
 ## The digest-equality proof
 
@@ -144,7 +144,7 @@ Have them compare to Lab 04, where rolling prod back meant re-copying old files 
 - **"Can I even push? It's your registry."** Reassure: the build publishes to *their own* `ghcr.io/<their-fork-owner>/…` (the workflow derives the namespace from `github.repository_owner`), never to Mustry's. Nothing in the lab pushes to a registry they don't own. Good moment to show them the package appearing under *their* fork → Packages.
 - **403 pushing, org-owned fork.** If their fork is under a GitHub org, *Settings → Actions → General → Workflow permissions* must be **read and write**, and org Packages must be enabled. Personal forks are fine by default. (Plain `permissions: packages: write` is already in the workflow.)
 - **401 pulling on the deploy job.** No `docker login ghcr.io` before `docker pull`. The package is private by default; the runner must authenticate.
-- **`manifest unknown` on release.** No `:dev` image exists yet — they tagged a release before ever shipping anything to dev. Fix: push to `develop` so `deploy.yml` publishes `:dev`, then tag. (On a rollback dispatch, it means that version was never released.) See TROUBLESHOOTING.
+- **`manifest unknown` on release.** No `:dev` image exists yet — they tagged a release before ever shipping anything to dev. Fix: push to `main` so `deploy.yml` publishes `:dev`, then tag. (On a rollback dispatch, it means that version was never released.) See TROUBLESHOOTING.
 - **Duplicate stack from the runner.** Compose project name mismatch — confirm the `name:` field is set in `docker-compose.yaml`. Without it, the runner's checkout dir name becomes the project and it spins up a parallel set.
 - **"Deploy ran but dev didn't change."** They deployed `:dev` (moving) and the host had an old digest cached, or `IGNITION_DEV_IMAGE` wasn't set. Inspect `{{.Config.Image}}` on the container.
 - **`Context access might be invalid` / environment warnings in the IDE.** Cosmetic — the Actions VS Code extension can't verify environments/vars that don't exist on GitHub yet. Gone once the environments are created.
