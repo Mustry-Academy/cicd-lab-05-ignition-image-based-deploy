@@ -59,7 +59,7 @@ Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD
 
 Reference reading sits alongside: [`docs/dockerfile-anatomy.md`](./docs/dockerfile-anatomy.md) (Block C) and [`docs/image-based-deploy-pattern.md`](./docs/image-based-deploy-pattern.md) (Block D).
 
-> The multi-gateway block of Day 3 lives in the [multi-gateway lab](https://github.com/mustry-academy/cicd-lab-06-multi-gateway-deploy).
+
 
 ## Repo layout
 
