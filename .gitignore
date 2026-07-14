@@ -21,9 +21,11 @@ venv/
 **/certificates/
 **/keystore/
 
-# Per-instance runtime configuration (UUID, gateway-network keystore, OPC-UA
-# keystores, machine-local system props). Each gateway owns its own — never
-# commit or bake them into a shared image.
+# Runtime configuration (environment-specific). NOTE: the LOCAL gateway's
+# copies under services/config/ are deliberately tracked (a fresh clone needs
+# the `local` collection manifest on disk or first boot FAULTs); tracked files
+# override these patterns, and the skip-worktree hook hides their churn.
+# .dockerignore keeps them out of the image either way.
 **/config/local
 **/config/resources/local
 
