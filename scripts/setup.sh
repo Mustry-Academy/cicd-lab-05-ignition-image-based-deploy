@@ -155,6 +155,82 @@ ensure_env_file() {
 
 ensure_env_file
 
+# ---- Stale-volume detection (identity/volume desync) -----------------------
+# The LOCAL gateway's internal identity (user-source/default, identity-
+# provider/default) lives in its bind-mounted config tree (services/config),
+# but the "already commissioned" marker lives in its data VOLUME. Docker
+# Compose reuses volumes by project name, so a fresh clone sitting next to a
+# volume from an earlier stack boots a gateway that skips commissioning yet
+# has no identity on disk: the web UI dies with "Identity provider not found:
+# default". Detect that desync and recreate the container + volume so
+# commissioning runs again on this boot. (Dev/prod have no data volumes —
+# they re-commission from the image + env vars on every deploy by design.)
+compose_project_name() {
+    docker compose config --format json 2>/dev/null \
+        | python3 -c 'import json,sys; print(json.load(sys.stdin).get("name",""))' 2>/dev/null || true
+}
+
+reset_desynced_local() {
+    local project vol identity_dir
+    project="$(compose_project_name)"
+    if [ -z "$project" ]; then
+        project="$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')"
+    fi
+    identity_dir="$PROJECT_ROOT/services/config/resources/core/ignition/user-source/default"
+    vol="${project}_ignition-local-data"
+    if [ ! -d "$identity_dir" ] && docker volume inspect "$vol" >/dev/null 2>&1; then
+        echo -e "${YELLOW}local gateway: data volume '$vol' exists but its config tree has no internal identity${NC}"
+        echo "  (fresh clone next to an old stack?) — recreating it so commissioning runs again."
+        docker compose rm -sf ignition-local >/dev/null 2>&1 || true
+        docker volume rm "$vol" >/dev/null
+    fi
+}
+
+reset_desynced_local
+
+# ---- Local first-boot: stash security-properties during commissioning -----
+# On the very first boot of the LOCAL gateway, auto-commissioning has to
+# guarantee an admin login exists. If it finds a security-properties file but
+# no matching user source (the repo tracks the policy file; the per-gateway
+# user-source/default is gitignored), it plays safe and creates a temp_N
+# identity, then rewrites security-properties to point at it — permanent git
+# noise AND an auth profile no other gateway has. If it finds NO
+# security-properties, it creates the `default` user source + identity
+# provider, exactly like dev/prod do on every image deploy. So: move the
+# committed file aside for the first boot, then put it back (it names
+# systemAuthProfile=default, which now exists, and carries the APIToken scan
+# permissions) and restart local.
+SECPROPS_DIR="$PROJECT_ROOT/services/config/resources/core/ignition/security-properties"
+SECPROPS_STASH=""
+stash_secprops_for_commissioning() {
+    local usersource_dir="$PROJECT_ROOT/services/config/resources/core/ignition/user-source/default"
+    # If a previous interrupted run left the file stashed away, recover the
+    # committed version from git before deciding anything.
+    if [ ! -d "$SECPROPS_DIR" ]; then
+        git -C "$PROJECT_ROOT" checkout -- "$SECPROPS_DIR" 2>/dev/null || true
+    fi
+    if [ -d "$usersource_dir" ] || [ ! -d "$SECPROPS_DIR" ]; then
+        return 0   # not a first boot (or nothing to stash)
+    fi
+    SECPROPS_STASH="$(mktemp -d)"
+    mv "$SECPROPS_DIR" "$SECPROPS_STASH/security-properties"
+    echo -e "${YELLOW}First boot of the local gateway: letting commissioning create the${NC}"
+    echo -e "${YELLOW}default identity before restoring the committed security-properties.${NC}"
+}
+
+restore_secprops_after_commissioning() {
+    [ -n "$SECPROPS_STASH" ] || return 0
+    rm -rf "$SECPROPS_DIR"   # drop the commissioning-written version
+    mv "$SECPROPS_STASH/security-properties" "$SECPROPS_DIR"
+    rmdir "$SECPROPS_STASH" 2>/dev/null || true
+    SECPROPS_STASH=""
+    echo -e "${GREEN}Restored the committed security-properties; restarting local to load it...${NC}"
+    docker restart "$(gateway_container local)" >/dev/null
+    wait_for_gateway local
+}
+
+stash_secprops_for_commissioning
+
 # ---- Start the stack ------------------------------------------------------
 existing_id="$(docker compose ps -q ignition-local 2>/dev/null || true)"
 if [ -n "$existing_id" ]; then
@@ -201,6 +277,8 @@ for gw in "${LAB_GATEWAYS[@]}"; do
     wait_for_gateway "$gw"
 done
 
+restore_secprops_after_commissioning
+
 # ---- API-permission repair (first boot only) ------------------------------
 # On the FIRST boot of a fresh gateway container, Ignition's auto-commissioning
 # resets the read/write permissions in security-properties, which locks the
@@ -209,17 +287,37 @@ done
 # (scripts/fix-gateway-api-perms.sh restarts the affected gateways). The local
 # gateway only hits this once (persistent volume); dev/prod hit it again on
 # every image deploy — the deploy flow handles those.
+probe_scan_api() {
+    curl -s -o /dev/null -w '%{http_code}' -m 10 -X POST \
+        -H "X-Ignition-API-Token: $IGNITION_API_KEY" \
+        "$(gateway_url "$1")/data/api/v1/scan/projects" || true
+}
+
 repair_api_perms() {
     load_api_key_from_env local
     if is_placeholder_api_key; then
         return 0   # no key to probe with; initial_scan prints the guidance
     fi
     local needs_fix=()
-    local gw url code
+    local gw code
     for gw in "${LAB_GATEWAYS[@]}"; do
-        url="$(gateway_url "$gw")"
-        code="$(curl -s -o /dev/null -w '%{http_code}' -m 10 -X POST             -H "X-Ignition-API-Token: $IGNITION_API_KEY"             "$url/data/api/v1/scan/projects" || true)"
-        [ "$code" = "403" ] && needs_fix+=("$gw")
+        code="$(probe_scan_api "$gw")"
+        case "$code" in
+            403) needs_fix+=("$gw") ;;
+            401)
+                # 401 = the gateway never LOADED the token resource. On local
+                # the committed token sits in the bind mount, so a restart is
+                # enough to load it. Dev/prod running the BASE image simply
+                # don't have the token yet — the first image deploy brings it.
+                if [ "$gw" = "local" ]; then
+                    echo -e "${YELLOW}API token not loaded yet on local — restarting it to load the committed token...${NC}"
+                    docker restart "$(gateway_container local)" >/dev/null
+                    wait_for_gateway local
+                    code="$(probe_scan_api local)"
+                    [ "$code" = "403" ] && needs_fix+=(local)
+                fi
+                ;;
+        esac
     done
     [ ${#needs_fix[@]} -eq 0 ] && return 0
     echo -e "${YELLOW}First-boot commissioning reset the API permissions on: ${needs_fix[*]}${NC}"

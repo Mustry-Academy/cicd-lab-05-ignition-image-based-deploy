@@ -10,10 +10,10 @@ The [`Dockerfile`](../Dockerfile) bakes the *deployable state* of a gateway on t
 |---|---|---|
 | `third-party-modules/*.modl` | `/third-party-modules/` | The gateway loads them via `-Dignition.gateway.externalModulesFolder`. Baking them = the module binaries ship with the artifact. |
 | `services/modules.json` | `data/modules.json` | Which modules turn on at boot. **A scan can't apply this — only a restart can.** That's the Lab 04 gap image-based closes. |
-| `services/config/` | `data/config/` | Gateway-level config (DB connections, identity providers, tag providers). Scanned at startup. |
+| `services/config/` | `data/config/` | Gateway-level config (DB connections, tag providers, API tokens). Scanned at startup. |
 | `projects/` | `data/projects/` | Project content (Perspective views, scripts, tags). Scanned at startup. |
 
-Everything else in the repo — docs, scripts, `.github/`, `.env` — is kept out by [`.dockerignore`](../.dockerignore).
+Everything else in the repo — docs, scripts, `.github/`, `.env` — is kept out by [`.dockerignore`](../.dockerignore). So is anything that belongs to **one** gateway rather than the artifact: the internal identity (`user-source/default/` holds an admin password hash — baking it would ship one gateway's login to every gateway running the image), per-instance keystores/UUIDs (`config/local/`, `config/resources/local/`), and `security-properties` (it names the internal user source, which isn't in the image — commissioning creates a fresh `default` identity from the container's `GATEWAY_ADMIN_*` env vars instead).
 
 ## The base image
 

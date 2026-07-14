@@ -41,7 +41,12 @@ COPY third-party-modules/  /third-party-modules/
 # 2. Module enablement manifest — which modules the gateway turns on at boot.
 COPY services/modules.json ${GATEWAY_DATA_PATH}/modules.json
 
-# 3. Gateway-level config (db connections, identity providers, tag providers…).
+# 3. Gateway-level config (db connections, tag providers, api tokens…).
+#    .dockerignore keeps the per-gateway parts OUT of this layer: config/local,
+#    config/resources/local, the internal identity (user-source/default,
+#    user-source/opcua-module, identity-provider/default) and
+#    security-properties — each gateway commissions its own identity from the
+#    GATEWAY_ADMIN_* env vars at first boot instead.
 COPY services/config/      ${GATEWAY_DATA_PATH}/config/
 
 # 4. Project content (Perspective views, scripts, tags) — changes most often.

@@ -41,6 +41,36 @@ Dockerfile
 # Database bootstrap (runs in the TimescaleDB sidecar, not the gateway image)
 db-init/
 
+# Per-instance identity — belongs to ONE gateway, never bake it into a shared
+# image. Same rule as Lab 04's .deployignore, excluded BY NAME:
+#   - config/local + config/resources/local: UUID, gateway-network keystore,
+#     OPC-UA keystores, machine-local system props
+#   - the INTERNAL identity trio: users.json carries the LOCAL gateway's admin
+#     password hash; baking it ships your admin login to every gateway running
+#     the image — instant lockout. Identity resources you add yourself
+#     (database/AD user sources, SAML/OIDC providers) hold no password data
+#     and ARE baked like any other config.
+# These dirs are gitignored too; the patterns here protect local builds
+# (scripts/build-image.sh) run from a working tree where the local gateway
+# has written them.
+services/config/local/
+services/config/resources/local/
+services/config/resources/core/ignition/user-source/default/
+services/config/resources/core/ignition/user-source/opcua-module/
+services/config/resources/core/ignition/identity-provider/default/
+
+# security-properties points systemAuthProfile at `default` — the internal
+# user source excluded above. An image-based gateway re-commissions on every
+# container recreate, and commissioning that finds a security-properties file
+# WITHOUT its matching user source plays safe: it creates a temp_N identity
+# and rewrites the file to point at it. Keep the file out of the image and
+# commissioning instead creates the clean `default` identity from the
+# container's GATEWAY_ADMIN_* env vars — the same end state Lab 04's dev/prod
+# gateways reach. (A production image CAN bake it when systemAuthProfile
+# names a deployable user source, e.g. an AD/database one, instead of the
+# gateway-owned internal one.)
+services/config/resources/core/ignition/security-properties/
+
 # Per-instance keystores and secrets. The actual keystore files are gitignored
 # (regenerated per gateway), so they're never in the build context — these
 # patterns are belt-and-suspenders so a stray keystore can't get baked into a

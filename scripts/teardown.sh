@@ -28,7 +28,8 @@ for arg in "$@"; do
 done
 
 if [ "$REMOVE_VOLUMES" = "true" ]; then
-  echo -e "${YELLOW}This will wipe named volumes (gateway internal DB, TimescaleDB data).${NC}"
+  echo -e "${YELLOW}This will wipe named volumes (gateway internal DB, TimescaleDB data)${NC}"
+  echo -e "${YELLOW}and the local gateway's internal identity under services/config/.${NC}"
   if [ -t 0 ] && [ "${CI:-}" != "1" ]; then
     read -p "Continue? (y/N): " -n 1 -r
     echo
@@ -39,6 +40,14 @@ if [ "$REMOVE_VOLUMES" = "true" ]; then
   fi
   echo -e "${GREEN}Stopping stack and removing volumes...${NC}"
   docker compose down -v
+  # The local gateway's (gitignored) internal identity lives in the bind
+  # mount, not the volume: wiping its volume means commissioning runs again
+  # on the next boot, and leftover identity files would make it create a
+  # temp_N profile instead of `default`. Remove them so setup.sh's
+  # first-boot flow starts clean.
+  rm -rf "$PROJECT_ROOT/services/config/resources/core/ignition/user-source/default" \
+         "$PROJECT_ROOT/services/config/resources/core/ignition/user-source/opcua-module" \
+         "$PROJECT_ROOT/services/config/resources/core/ignition/identity-provider/default"
 else
   echo -e "${GREEN}Stopping stack (volumes retained)...${NC}"
   docker compose down
