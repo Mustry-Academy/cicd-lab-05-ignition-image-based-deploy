@@ -22,7 +22,7 @@ The local → dev → prod story is the same; only the dev/prod **delivery mecha
 ## Prerequisites
 
 - A fork of this repo. The self-hosted runner registers against your fork, and the CI builds publish images to **your own** GHCR namespace (`ghcr.io/<your-fork-owner>/cicd-lab-05-ignition`) — never to Mustry's. **Enable Actions in your fork first**: forks ship with workflows disabled — open the *Actions* tab and click the green "I understand my workflows, go ahead and enable them" button.
-- A GitHub Personal Access Token with `repo` scope — the runner uses it to auto-register; never leaves your `.env`.
+- A GitHub Personal Access Token with `repo` scope — the runner uses it to auto-register; never leaves your `.env`. **Reuse the one you created in Lab 04**; if you're starting here, make one at [github.com/settings/tokens](https://github.com/settings/tokens) (Generate new token → classic → tick `repo`).
 - **≥ 8 GB free RAM for Docker** — three Ignition gateways at 1 GB each, plus TimescaleDB, the runner, and Docker overhead.
 - _Background:_ [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) sets up the Ignition stack and the file-based pattern this lab contrasts with. It helps but isn't required — this lab stands alone.
 - _No extra registry account:_ the CI publishes to **GitHub Container Registry (GHCR)** under your fork, authenticated with the workflow's built-in `GITHUB_TOKEN`. The **local** scripts (`build-image.sh`/`deploy-image.sh`) need no registry at all — they build and run images on your machine.

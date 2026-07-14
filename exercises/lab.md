@@ -315,9 +315,10 @@ Three directions, pick by appetite:
 1. **Run the real pipeline through GitHub Actions.** Everything you typed in part 2
    is automated in this repo's workflows — GitHub flow: merge to `main` → dev, tag → prod.
    Needs your fork + the bundled runner (also a great take-home):
-   1. In `.env`, point `RUNNER_REPO_URL` at **your fork**, set a `repo`-scope
-      `RUNNER_GITHUB_PAT`, then `docker compose up -d github-runner`. The runner appears
-      under your fork's *Settings → Actions → Runners*.
+   1. In `.env`, point `RUNNER_REPO_URL` at **your fork** and set `RUNNER_GITHUB_PAT`
+      to the same `repo`-scope PAT you created in Lab 04 (make one at
+      github.com/settings/tokens if you skipped it), then `docker compose up -d github-runner`.
+      The runner appears under your fork's *Settings → Actions → Runners*.
    2. Open a PR with a small project change — `ci.yml` validates it (including a no-push
       image build). Merge to `main` → `deploy.yml` builds on a hosted runner, pushes to
       **your** GHCR namespace, and your runner recreates dev (:8089).
