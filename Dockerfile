@@ -38,6 +38,18 @@ ARG GATEWAY_DATA_PATH=/usr/local/bin/ignition/data
 #    -Dignition.gateway.externalModulesFolder=/third-party-modules (see compose).
 COPY third-party-modules/  /third-party-modules/
 
+# 1b. Verify the modules, then a stand-in for a slow real-world module step.
+#     In a production build this is where you'd verify each .modl's signature or
+#     run it past an AV/supply-chain scanner before baking it in. Those take
+#     seconds; here `sleep 5` stands in for that cost so the layer cache lesson is
+#     visible. Because this RUN sits ABOVE the project COPY, editing a Perspective
+#     view (bottom layer) reuses this cached layer and rebuilds instantly, while
+#     touching third-party-modules/ busts it and pays the 5s again. That is layer
+#     ORDER earning its keep — cheap-changing content goes last.
+RUN sha256sum /third-party-modules/*.modl \
+    && echo "Verifying modules (stand-in for signature/AV scan)…" \
+    && sleep 5
+
 # 2. Module enablement manifest — which modules the gateway turns on at boot.
 COPY services/modules.json ${GATEWAY_DATA_PATH}/modules.json
 
