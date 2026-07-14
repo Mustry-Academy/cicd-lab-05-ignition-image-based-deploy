@@ -310,13 +310,32 @@ gets its own immutable `:sha` tag — that tag is your rollback point in Part 2.
 
 ## Stretch challenge `[OPTIONAL]`
 
-Two directions, pick by appetite:
+Three directions, pick by appetite:
 
-1. **Go deeper on the image:** shrink the build context with
+1. **Run the real pipeline through GitHub Actions.** Everything you typed in part 2
+   is automated in this repo's workflows — GitHub flow: merge to `main` → dev, tag → prod.
+   Needs your fork + the bundled runner (also a great take-home):
+   1. In `.env`, point `RUNNER_REPO_URL` at **your fork**, set a `repo`-scope
+      `RUNNER_GITHUB_PAT`, then `docker compose up -d github-runner`. The runner appears
+      under your fork's *Settings → Actions → Runners*.
+   2. Open a PR with a small project change — `ci.yml` validates it (including a no-push
+      image build). Merge to `main` → `deploy.yml` builds on a hosted runner, pushes to
+      **your** GHCR namespace, and your runner recreates dev (:8089).
+   3. `git tag v0.1.0 && git push origin v0.1.0` → `release.yml` re-tags `:dev` to
+      `:v0.1.0` + `:prod` — **no rebuild** — and recreates prod (:8090).
+   4. The payoff — prove dev and prod run the **same digest**:
+      ```bash
+      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-dev
+      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-prod
+      ```
+      Then roll prod back with one click: *Actions → Release → Run workflow*, entering an
+      earlier version.
+
+2. **Go deeper on the image:** shrink the build context with
    `--progress=plain`, do layer forensics with `docker history --no-trunc`, or
    (if you have a fork with Actions) add a no-push `docker build` smoke-test
    job to `ci.yml` so a broken Dockerfile fails the PR.
-2. **A first taste of Lab 06** — bake more kinds of cargo, the way the
+3. **A first taste of Lab 06** — bake more kinds of cargo, the way the
    production image from the teaching does:
    - **A third-party module:** enable an unused `.modl` from
      `third-party-modules/` in `services/modules.json`, rebuild, deploy to dev,

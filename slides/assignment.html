@@ -554,7 +554,7 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
   docker compose up -d ignition-dev</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Same deploy</span>
-          <p>The only line missing locally is <span class="inlinecode">docker pull</span>: your image store already holds the build. Everything else is <b>identical</b> to what the workflow runs.</p>
+          <p>The only line missing locally is <span class="inlinecode">docker pull</span>: your image store already holds the build. Everything else is <b>identical</b> to what the workflow runs. Want to run the real thing? The <b>stretch slide at the end</b> walks the full CI path.</p>
         </div>
       </div>
     </div>
@@ -591,7 +591,11 @@ curl -s localhost:8089/StatusPing
 <span class="cm"># repeat until it prints RUNNING</span>
 
 <span class="cm"># 4: after, your image</span>
-docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
+docker inspect -f '{{.Config.Image}}' lab05-ignition-dev
+
+<span class="cm"># and your baked part 1 description came along</span>
+docker exec lab05-ignition-dev \
+  cat data/projects/example-project/project.json</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Under the hood</span>
           <p><span class="inlinecode">docker-compose.yaml</span> interpolates <span class="inlinecode">IGNITION_DEV_IMAGE</span> into the dev service's <span class="inlinecode">image:</span>. New image → compose recreates the container. That's the whole deploy; in production the only extra ingredient is a <span class="inlinecode">docker pull</span> first.</p>
@@ -694,7 +698,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
     <div class="cols2" style="margin-top:auto">
       <div class="goal warn-g" style="margin-top:0">
         <span class="badge">Fresh gateway alert</span>
-        <p>Each deploy gave dev a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, first-hand. <b>Done early?</b> Two stretch directions in <span class="inlinecode">lab.md</span>: deeper image forensics, or a first taste of Lab 06.</p>
+        <p>Each deploy gave dev a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, first-hand. <b>Done early?</b> Run the real pipeline through GitHub Actions (next slide), or see <span class="inlinecode">lab.md</span> for deeper image forensics and a first taste of Lab 06.</p>
       </div>
       <div class="goal" style="margin-top:0">
         <span class="badge">Debrief · 10 min</span>
@@ -708,7 +712,48 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → debrief</span></div>
 </section>
 
-<!-- 18 · DONE -->
+<!-- 18 · STRETCH · RUN THE REAL PIPELINE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Stretch · optional</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Run the real pipeline through GitHub Actions</div><div class="lead">Everything you typed in part 2 is automated in this repo's workflows — GitHub flow: <b>merge to <span class="inlinecode">main</span> → dev</b>, <b>tag → prod</b>. Needs your fork + the bundled runner; also a great take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix">1</div><div class="tx"><b>One-time setup:</b> in <span class="inlinecode">.env</span>, point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b> and set a <span class="inlinecode">repo</span>-scope PAT, then start the runner. It appears under your fork's <i>Settings → Actions → Runners</i>.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Ship to dev via CI:</b> open a PR with a small project change and watch <span class="inlinecode">ci.yml</span> validate it (including a no-push image build). Merge to <span class="inlinecode">main</span> → <span class="inlinecode">deploy.yml</span> builds on a free hosted runner, pushes to <b>your</b> GHCR, and your runner recreates dev (:8089).</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to prod:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:dev</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:prod</span> — <b>no rebuild</b> — and recreates prod (:8090).</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><b>The payoff:</b> prove dev and prod run the <b>same digest</b>. Then roll prod back with one click: <i>Actions → Release → Run workflow</i>, entering an earlier version.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1: register the bundled runner against YOUR fork
+#    .env → RUNNER_REPO_URL + RUNNER_GITHUB_PAT</span>
+docker compose up -d github-runner
+
+<span class="cm"># 2: ship — PR → merge to main → watch Actions</span>
+
+<span class="cm"># 3: release</span>
+git tag v0.1.0 &amp;&amp; git push origin v0.1.0
+
+<span class="cm"># 4: the digest-equality proof</span>
+docker inspect -f '{{ index .RepoDigests 0 }}' \
+  lab05-ignition-dev
+docker inspect -f '{{ index .RepoDigests 0 }}' \
+  lab05-ignition-prod
+<span class="cm"># identical sha256 → prod runs the bytes dev tested</span></pre></div>
+        <div class="goal good-g" style="margin-top:18px">
+          <span class="badge">Build-once, promote-many</span>
+          <p>The release <b>never rebuilds</b>: it re-tags the image dev validated, so prod runs those exact bytes. That digest-equality check is the whole philosophy of image-based deploy in one command pair.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch · fork + runner required</span></div>
+</section>
+
+<!-- 19 · DONE -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
