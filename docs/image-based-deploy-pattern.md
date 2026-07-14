@@ -1,6 +1,6 @@
 # Image-based deploy pattern — cheat sheet
 
-Reference reading for Block D. The complete pattern in five steps, build-once/promote-many, GHCR auth, rollback, and where image-based fits versus file-based.
+Reference reading for part 2 of the lab. The complete pattern in five steps, build-once/promote-many, GHCR auth, rollback, and where image-based fits versus file-based.
 
 ## The pattern in five steps
 
@@ -26,13 +26,13 @@ Then verify health. No SSH of files, no scan API — the image already contains 
 The single most important idea in image-based release:
 
 ```
-push to develop ──▶ build ──▶ :sha-abc1234 + :dev ──▶ deploy to dev  (test it here)
+push to main ──▶ build ──▶ :sha-abc1234 + :dev ──▶ deploy to dev  (test it here)
                                        │
 tag v0.1.0 (on main) ─▶ promote ───────┘ re-tag :dev ──▶ :v0.1.0 + :prod ──▶ deploy to prod
                         (no rebuild — same digest)
 ```
 
-`release.yml` does **not** rebuild on a tag. It runs `docker buildx imagetools create` to copy the manifest of the already-tested **`:dev`** image (the one dev is running) onto new tags (`:v0.1.0`, `:prod`). Server-side, no layers moved. (Why `:dev` and not the tagged commit? In Git Flow the release merge into `main` is a new commit SHA with no image of its own — so we promote *what dev validated*, not "by commit.") Prove it:
+`release.yml` does **not** rebuild on a tag. It runs `docker buildx imagetools create` to copy the manifest of the already-tested **`:dev`** image (the one dev is running) onto new tags (`:v0.1.0`, `:prod`). Server-side, no layers moved. (Why `:dev` and not a rebuild from the tagged commit? A rebuild could pull a newer base layer and ship bytes dev never ran — we promote *what dev validated*.) Prove it:
 
 ```bash
 docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-dev

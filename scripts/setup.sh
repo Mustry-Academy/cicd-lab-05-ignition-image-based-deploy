@@ -287,7 +287,7 @@ if is_placeholder_api_key; then
     echo "  copy the IGNITION_API_KEY line from .env.example into .env — it matches the"
     echo "  pre-provisioned 'cicd' token baked into services/config, so it works as-is."
     echo "  Dev and prod are NOT scanned — they're redeployed by building/promoting an"
-    echo "  image (see exercises/block-c.md and block-d.md). No API key needed for them."
+    echo "  image (see exercises/lab.md). No API key needed for them."
     echo ""
 fi
 echo "Useful commands:"

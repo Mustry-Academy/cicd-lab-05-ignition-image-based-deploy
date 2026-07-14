@@ -1,6 +1,6 @@
 # Lab 05 — Ignition image-based deploy
 
-Day 3, Blocks C and D of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
+Day 3 of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
 
 > Bake an Ignition gateway's project, config, **and modules** into a versioned Docker image, push it to a registry, and deploy by pulling the image and recreating the container — then promote the *exact same image* you tested in dev to prod on a tag, with rollback as easy as running a previous tag.
 
@@ -41,10 +41,10 @@ Once setup finishes you have three Ignition gateways:
 | Gateway | URL | What runs there |
 |---|---|---|
 | `local` | http://localhost:8088 | Bind-mounted from `./projects/` + `./services/config/` — your **authoring** gateway (file-based, like Lab 04). |
-| `dev` | http://localhost:8089 | The **image** `deploy.yml` builds on push to **`develop`**. Base image (empty) until the first deploy. |
+| `dev` | http://localhost:8089 | The **image** `deploy.yml` builds on push to **`main`**. Base image (empty) until the first deploy. |
 | `prod` | http://localhost:8090 | The **image** `release.yml` promotes on tag push `v*` (cut from `main`). Base image (empty) until the first release. |
 
-Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD`, default `admin / lab05password`).
+Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD`, default `admin / password`).
 
 > **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing → Reset Trial* — unlimited and legal for development. Note: because dev/prod are recreated from a fresh image on each deploy, their trial clock resets every deploy too.
 
@@ -52,12 +52,12 @@ Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD
 
 ## Lab structure
 
-| Block | Topic | Exercise |
-|---|---|---|
-| C | Build the gateway image | [`exercises/block-c.md`](./exercises/block-c.md) |
-| D | Deploy & promote the image | [`exercises/block-d.md`](./exercises/block-d.md) |
+The lab is one exercise in two ordered parts — see [`exercises/lab.md`](./exercises/lab.md):
 
-Reference reading sits alongside: [`docs/dockerfile-anatomy.md`](./docs/dockerfile-anatomy.md) (Block C) and [`docs/image-based-deploy-pattern.md`](./docs/image-based-deploy-pattern.md) (Block D).
+1. **Build the gateway image** — bake projects, config, and modules into a self-contained image.
+2. **Deploy the image** — recreate the dev gateway from it, ship a change end-to-end, roll back.
+
+Reference reading sits alongside: [`docs/dockerfile-anatomy.md`](./docs/dockerfile-anatomy.md) (part 1) and [`docs/image-based-deploy-pattern.md`](./docs/image-based-deploy-pattern.md) (part 2).
 
 
 
@@ -74,21 +74,19 @@ cicd-lab-05-ignition-image-based-deploy/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                      ← PR validation: JSON, hadolint, actionlint, build smoke test (ubuntu-latest)
-│   │   ├── deploy.yml                  ← push to develop → build+push image → recreate dev gateway
+│   │   ├── deploy.yml                  ← push to main → build+push image → recreate dev gateway
 │   │   └── release.yml                 ← tag v* (on main) → re-tag the dev image → recreate prod gateway
 │   ├── actionlint.yaml                 ← declares the self-hosted `lab05` runner label
 │   └── pull_request_template.md
 ├── exercises/
-│   ├── block-c.md                      ← build the image
-│   └── block-d.md                      ← deploy & promote the image
+│   └── lab.md                          ← the lab, in two ordered parts: build the image, then deploy it
 ├── db-init/                            ← timescaledb init: create ignition_dev + ignition_prd databases
 ├── docs/                               ← reference reading
 │   ├── dockerfile-anatomy.md
 │   ├── image-based-deploy-pattern.md
 │   └── TROUBLESHOOTING.md
-├── instructor-notes/                   ← answer keys (read after solo work)
-│   ├── block-c-key.md
-│   └── block-d-key.md
+├── instructor-notes/                   ← answer key (read after solo work)
+│   └── lab-key.md
 ├── scripts/
 │   ├── setup.sh                        ← bootstraps the whole stack
 │   ├── teardown.sh                     ← stop the stack (with --volumes to wipe)
@@ -120,33 +118,26 @@ The single TimescaleDB hosts `ignition_loc`/`ignition_dev`/`ignition_prd`. **His
 
 `name: cicd-lab05` at the top of the compose file pins the project name so the self-hosted runner — which checks the repo out into its own working directory — recreates *these* containers instead of a parallel set.
 
-## Branching model (Git Flow)
+## Branching model (GitHub flow)
 
-This lab uses **Git Flow**: two long-lived branches map to the two deployed gateways.
+This lab uses **GitHub flow**: one long-lived branch, releases cut by tagging — the same flow as every previous lab.
 
 ```
-feature/*  ─┐
-            ├─PR→  develop ──push→  deploy.yml ──build+push→ :dev image ──→ DEV gateway
-hotfix/* ─┐ │
-          │ └── release/* ─PR→ main ──tag vX.Y.Z→ release.yml ──promote :dev→ :vX.Y.Z+:prod ──→ PROD gateway
-          └────────────────────────┘
+feature/*  ──PR→  main ──push→  deploy.yml ──build+push→ :dev image ──→ DEV gateway
+                   │
+                   └─tag vX.Y.Z→  release.yml ──promote :dev→ :vX.Y.Z+:prod ──→ PROD gateway
 ```
 
-| Branch | Role | What CWe-does |
+| Branch | Role | What CI does |
 |---|---|---|
-| `develop` | Integration — feature branches merge here | `deploy.yml` builds the image and ships it to the **dev** gateway |
-| `main` | Release-ready — only `release/*` and `hotfix/*` merge here | nothing on its own; you **tag** `vX.Y.Z` to release |
-| `feature/*` | Day-to-day work, branched off `develop` | `ci.yml` validates the PR into `develop` |
-| `release/*` / `hotfix/*` | Stabilize a release / urgent fix, merged into `main` (and back to `develop`) | `ci.yml` validates the PR into `main` |
+| `main` | The only long-lived branch — every merge should be deployable | `deploy.yml` builds the image and ships it to the **dev** gateway |
+| `feature/*` | Day-to-day work, branched off `main` | `ci.yml` validates the PR into `main` |
+| tag `vX.Y.Z` | A release — stamp the `main` state you want in prod | `release.yml` promotes the tested image to **prod** |
 
-**Releasing is promotion, not a rebuild.** A Git Flow merge into `main` creates a new commit SHA
-that has no image of its own, so `release.yml` promotes **the image dev already tested** — the
-`:dev` tag — re-tagging it to `:vX.Y.Z` + `:prod`. Prod runs the exact digest dev validated. The
-`release/*` branch is your freeze point: cut it when dev is where you want prod to be.
-
-> **Setup:** Git Flow needs a `develop` branch. Create it once in your fork
-> (`git checkout -b develop && git push -u origin develop`) and, optionally, set it as the fork's
-> **default branch** (*Settings → Branches*) so feature PRs target it by default.
+**Releasing is promotion, not a rebuild.** `release.yml` promotes **the image dev already
+tested** — the `:dev` tag — re-tagging it to `:vX.Y.Z` + `:prod`. Prod runs the exact digest dev
+validated; rebuilding from the tagged commit could silently pull a newer base layer and ship bytes
+dev never ran. Tag when dev is where you want prod to be.
 
 ## The CI/CD workflows
 
@@ -154,8 +145,8 @@ Three workflows under [`.github/workflows/`](./.github/workflows/):
 
 | File | Trigger | Runner(s) | Purpose |
 |---|---|---|---|
-| [`ci.yml`](./.github/workflows/ci.yml) | PR to `develop` or `main` | `ubuntu-latest` | Validate JSON + `.dockerignore`, lint the Dockerfile (hadolint) and workflows (actionlint), and **build the image** (no push) so a broken Dockerfile fails the PR. |
-| [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `develop` (build paths), manual | `build`: `ubuntu-latest`<br>`deploy`: `[self-hosted, lab05]` | Build + push the image to GHCR (`:sha-<short>`, `:dev`), then pull it and recreate the **dev** gateway. |
+| [`ci.yml`](./.github/workflows/ci.yml) | PR to `main` | `ubuntu-latest` | Validate JSON + `.dockerignore`, lint the Dockerfile (hadolint) and workflows (actionlint), and **build the image** (no push) so a broken Dockerfile fails the PR. |
+| [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `main` (build paths), manual | `build`: `ubuntu-latest`<br>`deploy`: `[self-hosted, lab05]` | Build + push the image to GHCR (`:sha-<short>`, `:dev`), then pull it and recreate the **dev** gateway. |
 | [`release.yml`](./.github/workflows/release.yml) | Tag `v*` (on `main`), manual | `promote`: `ubuntu-latest`<br>`deploy`: `[self-hosted, lab05]` | Re-tag the **`:dev`** image (what dev is running) to `:vX.Y.Z` + `:prod` (**no rebuild**) and recreate the **prod** gateway. |
 
 The **build is portable** (free GitHub-hosted runner); only the **pull + recreate** needs the self-hosted runner that owns the gateway container. That split is the heart of image-based deploy.
@@ -166,7 +157,7 @@ The **build is portable** (free GitHub-hosted runner); only the **pull + recreat
 - Auth is the workflow's built-in `GITHUB_TOKEN` (the workflows request `packages: write`). No registry password in `.env`, no extra account. The deploy jobs log in with the same token to **pull**.
 - The first push creates a GHCR package under your namespace. It defaults to **private**; that's fine — the runner authenticates. (Make it public under the package's settings if you want anonymous pulls.)
 - If your fork lives under a GitHub **organization**, the org may restrict this: *Settings → Actions → General → Workflow permissions* must allow **read and write**, and Packages must be enabled. A 403 on push almost always traces back to one of these — see [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md).
-- **No GHCR needed for Blocks C and most of D's mechanics** — the local `build-image.sh`/`deploy-image.sh` flow runs entirely on your machine. GHCR only enters via the CI workflows.
+- **No GHCR needed for the lab exercises** — the local `build-image.sh`/`deploy-image.sh` flow runs entirely on your machine. GHCR only enters via the CI workflows.
 
 Each deploy job runs in a GitHub **environment** so you get per-stage history and optional gates:
 
@@ -177,7 +168,7 @@ Each deploy job runs in a GitHub **environment** so you get per-stage history an
 
 Add **required reviewers** on `lab-gateway-prod` for a manual approval gate before prod releases — common pattern, no workflow change.
 
-Block D walks through the end-to-end setup.
+The deploy part of [`exercises/lab.md`](./exercises/lab.md) walks through the deploy flow these workflows automate.
 
 ## Licence
 

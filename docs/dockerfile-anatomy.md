@@ -1,6 +1,6 @@
 # Dockerfile anatomy — cheat sheet
 
-Reference reading for Block C. What the gateway image is made of, where each piece lands, and how to keep builds fast and traceable.
+Reference reading for part 1 of the lab. What the gateway image is made of, where each piece lands, and how to keep builds fast and traceable.
 
 ## What goes in the image
 
