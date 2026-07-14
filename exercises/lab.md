@@ -33,7 +33,7 @@ You'll need Docker with Compose v2 and ~8 GB free RAM. No GitHub setup is needed
 
 # Part 1 — Build the gateway image
 
-**Timing:** 20 min demo · 20 min we-do · 40 min you-do · 10 min debrief
+**Timing:** 20 min demo · 20 min we-do · 10 min debrief
 
 ## We-do (20 min)
 
@@ -146,59 +146,13 @@ Together, build and dissect the image.
      /usr/local/bin/ignition/data/projects -maxdepth 2
    ```
 
-## You do (40 min)
-
-### Part 1.1 — Bake a one-line change into the image (15 min)
-
-Change **the artifact**, not a running gateway. In Lab 04 you'd have copied this file onto a live gateway and called the scan API; here the change becomes an image layer.
-
-1. Open [`projects/example-project/project.json`](../projects/example-project/project.json) — the project's metadata: `title`, `description`, `enabled`.
-2. Change the `description` to something unmistakably yours, e.g. `"Example Project — baked by <your name>"`.
-3. Rebuild: `scripts/build-image.sh`. Watch the build output: only the `projects/` layer rebuilds — the cache lesson from the we-do, live.
-4. Prove it's baked in **without running a gateway** (override the entrypoint so the container runs
-   `cat` instead of booting the gateway):
-   ```bash
-   docker run --rm --entrypoint cat cicd-lab-05-ignition:local \
-     /usr/local/bin/ignition/data/projects/example-project/project.json
-   ```
-   Your description comes back out of the image layer: it is now part of the artifact. Every gateway that ever runs this image serves it. No copy step to script, no file to forget.
-
-### Part 1.2 — Prove a secret leaks into the context, then fence it out (10 min)
-
-The build context is everything Docker *can* see. One careless `COPY . .` — now, or in a refactor two years from now — and anything in the context ships inside a pullable artifact. `.dockerignore` is the backstop. Watch it fail, then fix it:
-
-1. Play the villain: `echo secret > NOTES.local` — a stand-in for the scratch notes, exports, and credential files that accumulate in every real repo.
-2. **See it leak.** Re-run the probe build from the we-do and list the context:
-   ```bash
-   docker build -q -t ctx-probe -f- . <<'EOF'
-   FROM busybox
-   COPY . /ctx
-   EOF
-   docker run --rm ctx-probe ls /ctx   # NOTES.local — leaked
-   ```
-   Nothing bakes it into the gateway image *yet* — the Dockerfile COPYs four fixed paths — but it's one careless `COPY` away from a published image.
-3. **Fence it out.** Add a pattern to `.dockerignore` (e.g. `*.local`), re-run the probe — gone.
-4. Re-run `scripts/validate.sh` — the `.dockerignore` sanity check should still pass (your new pattern doesn't remove the required ones). Delete `NOTES.local` when done.
-
-### Part 1.3 — Give one build several tags, and trace it (10 min)
-
-1. Build with an extra moving tag, the way a pipeline would tag `:dev`:
-   ```bash
-   scripts/build-image.sh --tag dev
-   docker images cicd-lab-05-ignition
-   ```
-   You should see three tags pointing at the **same image ID**: `:sha-<short>`, `:local`, `:dev`. A tag is just a name. The immutable `:sha-…` name is what makes part 2's rollback trivial: every build keeps a name that never moves.
-2. Pick the `:sha-<short>` tag and read its revision label back. Confirm it matches `git rev-parse --short HEAD`.
-
 ## Definition of done (part 1)
 
 You're finished with part 1 when:
 
 - [ ] `scripts/build-image.sh` builds the image and tags it `:sha-<short>` + `:local`.
 - [ ] You ran the image **with no bind mounts** and saw `example-project` load — proving it's self-contained.
-- [ ] You baked a project change into the image and confirmed it via `docker run --entrypoint cat … project.json` (no running gateway needed).
 - [ ] You can explain the Dockerfile's layer order in terms of cache busting.
-- [ ] You proved a file leaks into the build context, fenced it out with `.dockerignore`, and `scripts/validate.sh` still passes.
 - [ ] You can trace a built image back to its commit via the `revision` label.
 
 ## Stretch challenge `[OPTIONAL]`
@@ -249,7 +203,7 @@ Together, we deploy the part 1 image to the dev gateway once:
    `image:`; compose sees a new image and recreates the container.
 3. **Wait for RUNNING:** `curl -s localhost:8089/StatusPing` until it prints
    RUNNING (a fresh-image boot re-commissions the gateway — give it a few minutes).
-4. **Verify:** http://localhost:8089 → example-project is there — and so is the description you baked in part 1 (`docker exec lab05-ignition-dev cat data/projects/example-project/project.json`). No copy, no scan: the container was **replaced**. Inspect again — dev now runs your image.
+4. **Verify:** open http://localhost:8089/app/home/perspective/session-launcher and launch example-project — the baked project is live. No copy, no scan: the container was **replaced**. Inspect again — dev now runs your image.
 5. **What persisted:** historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.
 
 ## You do (40 min)
