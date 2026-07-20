@@ -10,7 +10,10 @@
 # to decide which image the test/production gateway runs. This script sets that variable
 # and runs `docker compose up -d ignition-<env>`, which recreates the container
 # because its image changed. No file copy, no scan — the project/config/modules
-# are already inside the image.
+# are already inside the image. The one thing the image deliberately does NOT
+# carry is the scan-API token (never bake credentials into a published image),
+# so after the gateway is up this script reinstalls that gateway's token from
+# the key in .env (scripts/install-api-token.sh).
 #
 # Usage:
 #   scripts/deploy-image.sh test                      # deploy <repo>:local to test
@@ -69,6 +72,16 @@ while [ $attempts -lt $max_attempts ]; do
     echo ""
     echo -e "${GREEN}$ENV_NAME gateway RUNNING — now serving $IMAGE${NC}"
     echo "  Verify which image it runs: docker inspect -f '{{.Config.Image}}' $CONTAINER"
+    # A recreated container has no API token (tokens are never baked into the
+    # image) and commissioning reset the scan permissions — reinstall both so
+    # the gateway stays scannable with the generated key in .env. Skips
+    # cleanly when no key exists yet (run scripts/generate-api-keys.sh).
+    if [ -n "$(api_key_for "$ENV_NAME")" ]; then
+      "$SCRIPT_DIR/install-api-token.sh" "$ENV_NAME"
+    else
+      echo -e "${YELLOW}No IGNITION_API_KEY for $ENV_NAME in .env — skipping token install.${NC}"
+      echo "  Run scripts/generate-api-keys.sh, then scripts/install-api-token.sh $ENV_NAME."
+    fi
     exit 0
   fi
   attempts=$((attempts + 1)); sleep 2; echo -n "."

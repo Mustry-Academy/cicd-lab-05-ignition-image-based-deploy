@@ -96,6 +96,8 @@ cicd-lab-05-ignition-image-based-deploy/
 ├── scripts/
 │   ├── setup.sh                        ← bootstraps the whole stack
 │   ├── teardown.sh                     ← stop the stack (with --volumes to wipe)
+│   ├── generate-api-keys.sh            ← per-gateway scan-API keys into .env (never committed, never baked; run by setup.sh)
+│   ├── install-api-token.sh            ← put a gateway's token into its container after a deploy (run by deploy-image.sh)
 │   ├── build-image.sh                  ← local mirror of the CI build (build + tag)
 │   ├── deploy-image.sh                 ← local mirror of the CI deploy (recreate a gateway from an image)
 │   ├── trigger-scan.sh                 ← scan the LOCAL gateway (the file-based inner loop)

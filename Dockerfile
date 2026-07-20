@@ -57,12 +57,14 @@ RUN sha256sum /third-party-modules/*.modl \
 # 2. Module enablement manifest — which modules the gateway turns on at boot.
 COPY --chown=2003:0 services/modules.json ${GATEWAY_DATA_PATH}/modules.json
 
-# 3. Gateway-level config (db connections, tag providers, api tokens…).
+# 3. Gateway-level config (db connections, tag providers…).
 #    .dockerignore keeps the per-gateway parts OUT of this layer: config/local,
 #    config/resources/local, the internal identity (user-source/default,
-#    user-source/opcua-module, identity-provider/default) and
-#    security-properties — each gateway commissions its own identity from the
-#    GATEWAY_ADMIN_* env vars at first boot instead.
+#    user-source/opcua-module, identity-provider/default), security-properties
+#    — each gateway commissions its own identity from the GATEWAY_ADMIN_* env
+#    vars at first boot instead — and the scan-API token (generated per
+#    gateway, reinstalled into the container after each deploy; a published
+#    image must never carry credentials).
 COPY --chown=2003:0 services/config/      ${GATEWAY_DATA_PATH}/config/
 
 # 4. Project content (Perspective views, scripts, tags) — changes most often.

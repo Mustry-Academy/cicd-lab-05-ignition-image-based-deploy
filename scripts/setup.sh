@@ -6,10 +6,13 @@
 #     metadata; volatile-only churn is undone with
 #     scripts/clean-ignition-resource-churn.sh
 #   - ensures .env is in place
+#   - generates a unique API key per gateway into .env (nothing key-related
+#     is committed or baked into an image); local gets its token via the bind
+#     mount, test/production get theirs installed into the container
+#     (scripts/install-api-token.sh)
 #   - brings up the stack (three Ignition gateways + shared TimescaleDB)
 #   - waits for ALL THREE gateways to become RUNNING
-#   - triggers an initial projects + config scan against the LOCAL gateway
-#     (only if its API key in .env is real, not the example placeholder).
+#   - triggers an initial projects + config scan against the LOCAL gateway.
 #     Test and production start on the BASE image (empty gateways) by design — they get
 #     replaced by the image deploy.yml builds / release.yml promotes.
 #
@@ -110,8 +113,8 @@ ensure_env_file() {
     fi
     echo -e "${YELLOW}.env not found — copying from .env.example.${NC}"
     cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
-    echo -e "${YELLOW}Edit .env to set gateway passwords. The IGNITION_API_KEY already${NC}"
-    echo -e "${YELLOW}matches the pre-provisioned token — no gateway UI steps needed.${NC}"
+    echo -e "${YELLOW}Edit .env to set gateway passwords; the IGNITION_API_KEY_* values${NC}"
+    echo -e "${YELLOW}are generated automatically in the next step.${NC}"
     echo ""
 }
 
@@ -120,6 +123,14 @@ ensure_env_file
 # (the image deploy in this lab!) keeps the gateway in your group without the
 # setup.sh shell's export. See pf_persist_lab_gid in scripts/preflight.sh.
 pf_persist_lab_gid
+
+# ---- Per-gateway API keys (never committed, never baked) -------------------
+# Generates a unique key per gateway into .env and writes the LOCAL gateway's
+# hash-only token resource into the bind-mounted services/config BEFORE first
+# boot (token resources are only read at boot). Test/production run images
+# and get their token docker-cp'ed in after boot (install-api-token.sh, in
+# the repair step below and after every deploy-image.sh run).
+"$SCRIPT_DIR/generate-api-keys.sh"
 
 # ---- Stale-volume detection (identity/volume desync) -----------------------
 # The LOCAL gateway's internal identity (user-source/default, identity-
@@ -245,42 +256,43 @@ done
 
 restore_secprops_after_commissioning
 
-# ---- API-permission repair (first boot only) ------------------------------
-# On the FIRST boot of a fresh gateway container, Ignition's auto-commissioning
-# resets the read/write permissions in security-properties, which locks the
-# pre-provisioned API key out: it still authenticates (bad key = 401) but every
-# call gets 403. Detect that and graft the APIToken permissions back
-# (scripts/fix-gateway-api-perms.sh restarts the affected gateways). The local
-# gateway only hits this once (persistent volume); test/production hit it again on
-# every image deploy — the deploy flow handles those.
+# ---- API-token repair (first boot only) -----------------------------------
+# Each gateway is probed with ITS OWN generated key from .env. Two failure
+# modes, both first-boot only for local (persistent volume), and once per
+# container recreate for test/production:
+#   401 = the gateway never LOADED a matching token. Local has the generated
+#         token in its bind mount, so a restart loads it. Test/production
+#         keep no host config tree — install the token into the container
+#         (install-api-token.sh docker-cp's it in, grafts the permissions,
+#         and restarts). deploy-image.sh does the same after every deploy.
+#   403 = commissioning reset the read/write permissions in
+#         security-properties; the key authenticates but every call is
+#         Forbidden. Graft the APIToken permissions back and restart
+#         (fix-gateway-api-perms.sh).
 probe_scan_api() {
     curl -s -o /dev/null -w '%{http_code}' -m 10 -X POST \
-        -H "X-Ignition-API-Token: $IGNITION_API_KEY" \
+        -H "X-Ignition-API-Token: $(api_key_for "$1")" \
         "$(gateway_url "$1")/data/api/v1/scan/projects" || true
 }
 
 repair_api_perms() {
-    load_api_key_from_env local
-    if is_placeholder_api_key; then
-        return 0   # no key to probe with; initial_scan prints the guidance
-    fi
     local needs_fix=()
     local gw code
     for gw in "${LAB_GATEWAYS[@]}"; do
+        [ -n "$(api_key_for "$gw")" ] || continue   # no key to probe with
         code="$(probe_scan_api "$gw")"
         case "$code" in
             403) needs_fix+=("$gw") ;;
             401)
-                # 401 = the gateway never LOADED the token resource. On local
-                # the committed token sits in the bind mount, so a restart is
-                # enough to load it. Test/production running the BASE image simply
-                # don't have the token yet — the first image deploy brings it.
                 if [ "$gw" = "local" ]; then
-                    echo -e "${YELLOW}API token not loaded yet on local — restarting it to load the committed token...${NC}"
+                    echo -e "${YELLOW}API token not loaded yet on local — restarting it to load the generated token...${NC}"
                     docker restart "$(gateway_container local)" >/dev/null
                     wait_for_gateway local
                     code="$(probe_scan_api local)"
                     [ "$code" = "403" ] && needs_fix+=(local)
+                else
+                    echo -e "${YELLOW}API token not on $gw yet — installing it into the container...${NC}"
+                    "$SCRIPT_DIR/install-api-token.sh" "$gw"
                 fi
                 ;;
         esac
@@ -305,8 +317,7 @@ initial_scan() {
     load_api_key_from_env local
     if is_placeholder_api_key; then
         echo -e "${YELLOW}No API key in .env yet — skipping initial scan.${NC}"
-        echo "  The lab ships a pre-provisioned token; copy the IGNITION_API_KEY line"
-        echo "  from .env.example into .env, then run:"
+        echo "  scripts/generate-api-keys.sh should have created one; run it, then:"
         echo "    scripts/trigger-scan.sh both --gateway local"
         return 0
     fi
@@ -345,15 +356,13 @@ echo "  Host: localhost  Port: 5432"
 echo "  Databases: ignition_local_development, ignition_test, ignition_production"
 echo "  Username: ${ACTUAL_PG_USER:-ignition}  Password: ${ACTUAL_PG_PASS:-(see .env)}"
 echo ""
-if is_placeholder_api_key; then
-    echo -e "${YELLOW}Next steps (LOCAL gateway only):${NC}"
-    echo "  The local gateway is your file-based authoring loop. To scan it via the API,"
-    echo "  copy the IGNITION_API_KEY line from .env.example into .env — it matches the"
-    echo "  pre-provisioned 'cicd' token baked into services/config, so it works as-is."
-    echo "  Test and production are NOT scanned — they're redeployed by building/promoting an"
-    echo "  image (see exercises/lab.md). No API key needed for them."
-    echo ""
-fi
+echo "API keys (unique to this clone, generated into .env — never committed,"
+echo "never baked into an image):"
+echo "  IGNITION_API_KEY_LOCAL / _TEST / _PRODUCTION — one per gateway;"
+echo "  scripts/trigger-scan.sh picks the right one via --gateway. Deploys to"
+echo "  test/production reinstall that gateway's token into the fresh container"
+echo "  automatically (scripts/install-api-token.sh)."
+echo 
 echo "Useful commands:"
 echo "  docker compose ps                              # check container state"
 echo "  docker logs -f lab05-ignition-local            # tail local gateway logs"

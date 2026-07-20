@@ -59,6 +59,14 @@ services/config/resources/core/ignition/user-source/default/
 services/config/resources/core/ignition/user-source/opcua-module/
 services/config/resources/core/ignition/identity-provider/default/
 
+# The scan-API token: generated per clone (scripts/generate-api-keys.sh), one
+# key PER GATEWAY, never committed — and never baked: the image is a published
+# artifact shared test→production, so a baked token would (a) publish the
+# local gateway's auth config and (b) make one key open every gateway running
+# the image. Deploys reinstall the target gateway's own token into the fresh
+# container instead (scripts/install-api-token.sh, run by deploy-image.sh).
+services/config/resources/core/ignition/api-token/
+
 # security-properties points systemAuthProfile at `default` — the internal
 # user source excluded above. An image-based gateway re-commissions on every
 # container recreate, and commissioning that finds a security-properties file

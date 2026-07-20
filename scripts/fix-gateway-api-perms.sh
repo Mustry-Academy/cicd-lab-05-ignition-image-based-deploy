@@ -2,20 +2,21 @@
 # fix-gateway-api-perms.sh — restore the APIToken permissions that Ignition's
 # first-boot auto-commissioning wipes from core security-properties.
 #
-# Why this exists: the image bakes services/config with an api-token (`cicd`)
-# plus security-properties granting APIToken Access/Read/Write. But when a
-# FRESH container boots (every image deploy recreates test/production), the gateway's
-# auto-commissioning (driven by GATEWAY_ADMIN_USERNAME/PASSWORD) creates a new
-# temp_N user source and RESETS readPermissions/writePermissions to
+# Why this exists: every gateway carries a generated api-token (`cicd`,
+# provisioned by scripts/generate-api-keys.sh / install-api-token.sh — never
+# committed, never baked into an image). But when a FRESH container boots
+# (every image deploy recreates test/production), the gateway's
+# auto-commissioning (driven by GATEWAY_ADMIN_USERNAME/PASSWORD) RESETS
+# readPermissions/writePermissions in security-properties to
 # Roles/Administrator only — which an API token can never hold. Result: the
-# baked key authenticates (401 for a bad key) but every call is Forbidden
-# (403). This script grafts the APIToken permission entries back into the
+# key authenticates (401 for a bad key) but every call is Forbidden (403).
+# This script grafts the APIToken permission entries back into the
 # container's live security-properties (keeping whatever systemAuthProfile
 # commissioning chose), restarts the gateway, and the key works.
 #
 # The LOCAL gateway only ever needs this once (its data volume persists, so
-# commissioning runs a single time). Test/production need it after each image deploy
-# — or wire it into the deploy flow.
+# commissioning runs a single time). Test/production need it after each image
+# deploy — install-api-token.sh (called by deploy-image.sh) runs it for you.
 #
 # Usage:
 #   scripts/fix-gateway-api-perms.sh test
