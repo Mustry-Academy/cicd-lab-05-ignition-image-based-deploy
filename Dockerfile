@@ -31,12 +31,16 @@ ARG GATEWAY_DATA_PATH=/usr/local/bin/ignition/data
 
 # --- Bake the deployable state into image layers ----------------------------
 # Each COPY is its own layer, so unchanged inputs stay cached on rebuild.
+# --chown=2003:0 matches the image's own ignition user: COPY would otherwise
+# bake everything root-owned, and the gateway (which does NOT run as root)
+# could not create its runtime dirs under config/ -- the FAULT this lab used
+# to work around with `--user root`.
 # Project content changes most often → keep it last so a project edit doesn't
 # bust the (larger, slower) module layer above it.
 
 # 1. Third-party .modl binaries — large, rarely change. Mounted at runtime via
 #    -Dignition.gateway.externalModulesFolder=/third-party-modules (see compose).
-COPY third-party-modules/  /third-party-modules/
+COPY --chown=2003:0 third-party-modules/  /third-party-modules/
 
 # 1b. Verify the modules, then a stand-in for a slow real-world module step.
 #     In a production build this is where you'd verify each .modl's signature or
@@ -51,7 +55,7 @@ RUN sha256sum /third-party-modules/*.modl \
     && sleep 5
 
 # 2. Module enablement manifest — which modules the gateway turns on at boot.
-COPY services/modules.json ${GATEWAY_DATA_PATH}/modules.json
+COPY --chown=2003:0 services/modules.json ${GATEWAY_DATA_PATH}/modules.json
 
 # 3. Gateway-level config (db connections, tag providers, api tokens…).
 #    .dockerignore keeps the per-gateway parts OUT of this layer: config/local,
@@ -59,10 +63,10 @@ COPY services/modules.json ${GATEWAY_DATA_PATH}/modules.json
 #    user-source/opcua-module, identity-provider/default) and
 #    security-properties — each gateway commissions its own identity from the
 #    GATEWAY_ADMIN_* env vars at first boot instead.
-COPY services/config/      ${GATEWAY_DATA_PATH}/config/
+COPY --chown=2003:0 services/config/      ${GATEWAY_DATA_PATH}/config/
 
 # 4. Project content (Perspective views, scripts, tags) — changes most often.
-COPY projects/             ${GATEWAY_DATA_PATH}/projects/
+COPY --chown=2003:0 projects/             ${GATEWAY_DATA_PATH}/projects/
 
 # --- Provenance labels ------------------------------------------------------
 # Stamp the image with the git SHA it was built from so you can always trace a

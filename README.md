@@ -26,6 +26,14 @@ The local → dev → prod story is the same; only the dev/prod **delivery mecha
 - _Background:_ [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) sets up the Ignition stack and the file-based pattern this lab contrasts with. It helps but isn't required — this lab stands alone.
 - _No extra registry account:_ the CI publishes to **GitHub Container Registry (GHCR)** under your fork, authenticated with the workflow's built-in `GITHUB_TOKEN`. The **local** scripts (`build-image.sh`/`deploy-image.sh`) need no registry at all — they build and run images on your machine.
 
+
+> **WSL2 (Windows): keep the clone in your Linux home (`~/…`), never `/mnt/c/…`.**
+> On the Windows filesystem your Windows user, your WSL user and the gateway's
+> container user are three different identities, so file ownership breaks in ways
+> `chown` cannot fix and you end up reaching for `sudo` (which makes it worse).
+> `scripts/setup.sh` refuses to run from there, and never needs `sudo`.
+> See [`docs/wsl-setup.md`](./docs/wsl-setup.md).
+
 ## Quick start
 
 ```bash
