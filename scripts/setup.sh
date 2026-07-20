@@ -25,7 +25,7 @@
 set -euo pipefail
 
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
-# shellcheck source=preflight.sh
+# shellcheck source=preflight.sh disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/preflight.sh"
 cd "$PROJECT_ROOT"
 
