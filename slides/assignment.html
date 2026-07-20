@@ -166,7 +166,7 @@ body{
   <div class="cover">
     <div class="eyebrow">The assignment · breakout rooms · 2 × 40 min</div>
     <div class="big">Build the gateway image locally, then deploy it by <em>replacing the container</em></div>
-    <div class="sub">Everything on your own machine. Together we build the gateway image and prove it's self-contained: no bind mounts, no scan call. Then you deploy that image to the local dev gateway by recreating the container, ship a change end-to-end, and roll back by running the previous build's tag. No registry, no uploads, no GitHub setup needed.</div>
+    <div class="sub">Everything on your own machine. Together we build the gateway image and prove it's self-contained: no bind mounts, no scan call. Then you deploy that image to the local test gateway by recreating the container, ship a change end-to-end, and roll back by running the previous build's tag. No registry, no uploads, no GitHub setup needed.</div>
     <div class="for">
       <span>Floating to help</span>
       <span class="pill"><b>Sam</b></span>
@@ -217,8 +217,8 @@ body{
       <div class="pcard p2">
         <div class="pn">PART 2 · SOLO · 40 MIN</div>
         <h4>Deploy locally by replacing the container</h4>
-        <p>Recreate the dev gateway from your image → ship a change end-to-end → roll back to the previous build's tag.</p>
-        <div class="gate">gate → dev rolled back, and you can explain why it was cheap</div>
+        <p>Recreate the test gateway from your image → ship a change end-to-end → roll back to the previous build's tag.</p>
+        <div class="gate">gate → test rolled back, and you can explain why it was cheap</div>
       </div>
     </div>
     <div class="goal">
@@ -243,7 +243,7 @@ body{
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. No need to enable Actions today — nothing in the assignment triggers a workflow.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins and the pre-provisioned <span class="inlinecode">cicd</span> API key work as shipped on all three gateways. No PAT, no fork, no GitHub account needed today.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>. Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>dev</b> (:8089) and <b>prod</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. Four containers, no runner: today <b>you</b> are the last mile of the pipeline.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>test</b> (:8089) and <b>production</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. Four containers, no runner: today <b>you</b> are the last mile of the pipeline.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: the parent folder, all labs side by side</span>
@@ -357,10 +357,10 @@ du -sh .git</pre></div>
   </div>
   <div class="body">
     <div class="eyebrow">Part 2 · solo · 40 min · exercises/lab.md</div>
-    <div class="title" style="color:#fff;max-width:26ch">Deploy your image to the dev gateway by replacing the container</div>
+    <div class="title" style="color:#fff;max-width:26ch">Deploy your image to the test gateway by replacing the container</div>
     <p class="lead">The deploy you learned in the teaching, done for real on your machine: recreate the container from a new image, verify, then roll back. No registry involved: your local image store plays that role today.</p>
     <ul class="checks" style="margin-top:22px;max-width:920px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2.1:</b> deploy your local image to the dev gateway (10 min).</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2.1:</b> deploy your local image to the test gateway (10 min).</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2.2:</b> ship a change end-to-end: edit → commit → rebuild → redeploy (15 min).</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2.3:</b> roll back to the previous build's tag, and check what survived (10 min).</span></li>
     </ul>
@@ -386,12 +386,12 @@ du -sh .git</pre></div>
         <div class="code"><pre><span class="cm"># what a deploy job would run
 # (on a machine that owns the gateway):</span>
 docker pull ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt;
-IGNITION_DEV_IMAGE=ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt; \
-  docker compose up -d ignition-dev
+IGNITION_TEST_IMAGE=ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt; \
+  docker compose up -d ignition-test
 
 <span class="cm"># what YOU run today (no registry, so no pull):</span>
-IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
-  docker compose up -d ignition-dev</pre></div>
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-test</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Same deploy</span>
           <p>The only line missing locally is <span class="inlinecode">docker pull</span>: your image store already holds the build. Everything else is <b>identical</b> to what the workflow runs. Want to run the real thing? The <b>stretch slide at the end</b> walks the full CI path.</p>
@@ -402,42 +402,42 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Same Actions, same commands, no transport</span></div>
 </section>
 
-<!-- 9 · PART 2.1 · DEPLOY TO DEV -->
+<!-- 9 · PART 2.1 · DEPLOY TO TEST -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
     <div class="stage">Part 2.1</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">PART 2.1</span><div><div class="title">Deploy your image to the dev gateway, command by command</div><div class="lead">No script today: you type the deploy yourself so you see there's nothing to it. No <span class="inlinecode">docker cp</span>, no scan call: the container is <b>replaced</b>.</div></div></div>
+    <div class="sechead"><span class="num phase2">PART 2.1</span><div><div class="title">Deploy your image to the test gateway, command by command</div><div class="lead">No script today: you type the deploy yourself so you see there's nothing to it. No <span class="inlinecode">docker cp</span>, no scan call: the container is <b>replaced</b>.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">1</div><div class="tx">Confirm dev is on the <b>base</b> image (an empty gateway).</div></div>
+        <div class="step"><div class="ix p">1</div><div class="tx">Confirm test is on the <b>base</b> image (an empty gateway).</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx">The deploy is <b>one command</b>: point the compose variable at your image and bring the service up. Compose sees a new image and recreates the container.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Wait for the gateway to come back: poll <span class="inlinecode">/StatusPing</span> until it says <b>RUNNING</b> (a fresh-image boot re-commissions, so give it a few minutes).</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx">Verify: open <span class="inlinecode">http://localhost:8089/app/home/perspective/session-launcher</span> and launch <b>example-project</b>: the baked project is live. Then inspect: which image does dev run now?</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Verify: open <span class="inlinecode">http://localhost:8089/app/home/perspective/session-launcher</span> and launch <b>example-project</b>: the baked project is live. Then inspect: which image does test run now?</div></div>
         <div class="step"><div class="ix p">5</div><div class="tx">Note what <b>persisted</b>: the historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: before, the base image</span>
-docker inspect -f '{{.Config.Image}}' lab05-ignition-dev
+docker inspect -f '{{.Config.Image}}' lab05-ignition-test
 
 <span class="cm"># 2: THE deploy</span>
-IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
-  docker compose up -d ignition-dev
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-test
 
 <span class="cm"># 3: wait for RUNNING</span>
 curl -s localhost:8089/StatusPing
 <span class="cm"># repeat until it prints RUNNING</span>
 
 <span class="cm"># 4: after, your image</span>
-docker inspect -f '{{.Config.Image}}' lab05-ignition-dev
+docker inspect -f '{{.Config.Image}}' lab05-ignition-test
 
 <span class="cm"># and launch the baked project live:
 # :8089/app/home/perspective/session-launcher</span></pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Under the hood</span>
-          <p><span class="inlinecode">docker-compose.yaml</span> interpolates <span class="inlinecode">IGNITION_DEV_IMAGE</span> into the dev service's <span class="inlinecode">image:</span>. New image → compose recreates the container. That's the whole deploy; in production the only extra ingredient is a <span class="inlinecode">docker pull</span> first.</p>
+          <p><span class="inlinecode">docker-compose.yaml</span> interpolates <span class="inlinecode">IGNITION_TEST_IMAGE</span> into the test service's <span class="inlinecode">image:</span>. New image → compose recreates the container. That's the whole deploy; in production the only extra ingredient is a <span class="inlinecode">docker pull</span> first.</p>
         </div>
       </div>
     </div>
@@ -474,8 +474,8 @@ git checkout main &amp;&amp; git merge feature/tweak-view
 
 <span class="cm"># 4: rebuild + redeploy</span>
 scripts/build-image.sh
-IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
-  docker compose up -d ignition-dev</pre></div>
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-test</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">This is the pipeline</span>
           <p>Steps 2-5 are exactly what a deploy workflow automates on merge: <b>build → tag → run</b>. You're doing the pipeline's job by hand once, so the automation never feels like magic.</p>
@@ -496,18 +496,18 @@ IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local \
     <div class="sechead"><span class="num phase2">PART 2.3</span><div><div class="title">Roll back by running the previous build's tag</div><div class="lead">The image-based rollback: point the container at yesterday's name. No git surgery, no re-copying files, nothing rebuilt.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">1</div><div class="tx">Pretend Part 2.2's change broke something on dev. You need the previous version back, <b>now</b>.</div></div>
+        <div class="step"><div class="ix p">1</div><div class="tx">Pretend Part 2.2's change broke something on test. You need the previous version back, <b>now</b>.</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx">Deploy the <b>old</b> <span class="inlinecode">:sha-&lt;short&gt;</span> tag you wrote down in Part 2.2: the same one-liner, older name. The old image never went away; it's a name in your image store.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Verify at :8089: the view is back to its previous state.</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx">Count the irreversible steps you just took. (It's zero: both versions still exist, and you can flip between them all afternoon.)</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 2: rollback = the same deploy, older tag</span>
-IGNITION_DEV_IMAGE=cicd-lab-05-ignition:sha-<span class="cmd2">&lt;old-sha&gt;</span> \
-  docker compose up -d ignition-dev
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:sha-<span class="cmd2">&lt;old-sha&gt;</span> \
+  docker compose up -d ignition-test
 
-<span class="cm"># 3: confirm what dev runs now</span>
-docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
+<span class="cm"># 3: confirm what test runs now</span>
+docker inspect -f '{{.Config.Image}}' lab05-ignition-test</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Compare</span>
           <p>File-based rollback (Lab 04) meant re-running the pipeline on an older tag: it works, but it re-copies and re-scans. Here the previous version <b>already exists as an artifact</b>: rollback is just running it. That difference is the whole reason teams keep versioned images around.</p>
@@ -527,17 +527,17 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
   <div class="body">
     <div class="sechead"><span class="num phase2">2 · DONE?</span><div><div class="title">Part 2 definition of done</div><div class="lead">All six, before the debrief — the rollback is the one we'll ask you about.</div></div></div>
     <ul class="checks" style="max-width:960px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>The dev gateway (:8089) runs <b>your</b> image, and you proved it with <span class="inlinecode">docker inspect</span>.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on dev.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>The test gateway (:8089) runs <b>your</b> image, and you proved it with <span class="inlinecode">docker inspect</span>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on test.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Your image store holds <b>two immutable <span class="inlinecode">:sha</span> tags</b>, one per build, each traceable to its commit.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You rolled dev back to the older tag and verified the old view is live again.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You rolled test back to the older tag and verified the old view is live again.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You checked that the <b>historian data survived</b> both deploys, and can say why.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You can name the two steps a production pipeline adds between your build and your run (push + pull), and why we skipped them today.</span></li>
     </ul>
     <div class="cols2" style="margin-top:auto">
       <div class="goal warn-g" style="margin-top:0">
         <span class="badge">Fresh gateway alert</span>
-        <p>Each deploy gave dev a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, first-hand. <b>Done early?</b> Run the real pipeline through GitHub Actions (next slide), or see <span class="inlinecode">lab.md</span> for deeper image forensics and a first taste of Lab 06.</p>
+        <p>Each deploy gave test a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, first-hand. <b>Done early?</b> Run the real pipeline through GitHub Actions (next slide), or see <span class="inlinecode">lab.md</span> for deeper image forensics and a first taste of Lab 06.</p>
       </div>
       <div class="goal" style="margin-top:0">
         <span class="badge">Debrief · 10 min</span>
@@ -562,8 +562,8 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx"><b>Build via CI:</b> open a PR with a small project change and watch <span class="inlinecode">ci.yml</span> validate it (including a no-push image build). Merge to <span class="inlinecode">main</span> → <span class="inlinecode">deploy.yml</span> builds on a free hosted runner and pushes to <b>your</b> GHCR namespace.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx"><b>Deploy it yourself:</b> open the run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point dev at it. Same two commands as part 2; only the image name got longer.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to prod:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:dev</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:prod</span> — <b>no rebuild</b>. Deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PROD_IMAGE</span>.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Deploy it yourself:</b> open the run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point test at it. Same two commands as part 2; only the image name got longer.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to production:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:test</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:production</span> — <b>no rebuild</b>. Deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PRODUCTION_IMAGE</span>.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx"><b>Notice what stayed manual:</b> you typed an image name twice. That last mile — a machine next to the gateway, picking the tag up on its own — is exactly what Labs 06 and 07 automate.</div></div>
       </div>
       <div>
@@ -571,21 +571,21 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
 
 <span class="cm"># 2: copy the tag from the run summary, deploy it</span>
 docker pull ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt;
-IGNITION_DEV_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt; \
-  docker compose up -d ignition-dev
+IGNITION_TEST_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt; \
+  docker compose up -d ignition-test
 
 <span class="cm"># 3: release (promote, no rebuild)</span>
 git tag v0.1.0 &amp;&amp; git push origin v0.1.0
 
 <span class="cm"># 4: the digest-equality proof</span>
 docker inspect -f '{{ index .RepoDigests 0 }}' \
-  lab05-ignition-dev
+  lab05-ignition-test
 docker inspect -f '{{ index .RepoDigests 0 }}' \
-  lab05-ignition-prod
-<span class="cm"># identical sha256 → prod runs the bytes dev tested</span></pre></div>
+  lab05-ignition-production
+<span class="cm"># identical sha256 → production runs the bytes the test gateway tested</span></pre></div>
         <div class="goal good-g" style="margin-top:18px">
           <span class="badge">Build-once, promote-many</span>
-          <p>The release <b>never rebuilds</b>: it re-tags the image dev validated, so prod runs those exact bytes. That digest-equality check is the whole philosophy of image-based deploy in one command pair.</p>
+          <p>The release <b>never rebuilds</b>: it re-tags the image test validated, so production runs those exact bytes. That digest-equality check is the whole philosophy of image-based deploy in one command pair.</p>
         </div>
       </div>
     </div>
@@ -605,7 +605,7 @@ docker inspect -f '{{ index .RepoDigests 0 }}' \
     <ul class="checks" style="max-width:940px;margin-top:22px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You baked <b>project, config and modules</b> into a versioned image and proved it self-contained: no mounts, no scan.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You shipped a change end-to-end by hand: <b>edit → commit → build → tag → recreate the container</b>. That loop is what a pipeline automates.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You rolled dev back by <b>running the previous build's tag</b>, and saw why versioned artifacts make that cheap.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You rolled test back by <b>running the previous build's tag</b>, and saw why versioned artifacts make that cheap.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Bring one <b>surprise</b> and one <b>question</b> to the debrief.</span></li>
     </ul>
     <div class="goal" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14);border-left-color:var(--peri2)">

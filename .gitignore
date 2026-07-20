@@ -33,7 +33,7 @@ venv/
 # holds the admin password hash!), its identity provider, and the OPC-UA
 # module's user source belong to ONE gateway. Committing them ships your
 # local gateway's admin credentials to every gateway you deploy to — and
-# locks everyone out of dev/prod. Identity resources you configure yourself
+# locks everyone out of test/production. Identity resources you configure yourself
 # (a database or AD user source, a SAML/OIDC identity provider) hold no
 # password data and ARE tracked and deployed like any other config.
 **/config/resources/core/ignition/user-source/default/

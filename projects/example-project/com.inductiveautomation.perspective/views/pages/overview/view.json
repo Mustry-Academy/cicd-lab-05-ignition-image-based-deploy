@@ -2294,7 +2294,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "AlarmRow_0"
+                          "name": "AlarmRow0"
                         },
                         "position": {
                           "basis": "42px"
@@ -2395,7 +2395,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "AlarmRow_1"
+                          "name": "AlarmRow1"
                         },
                         "position": {
                           "basis": "42px"
@@ -2496,7 +2496,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "AlarmRow_2"
+                          "name": "AlarmRow2"
                         },
                         "position": {
                           "basis": "42px"
@@ -2872,7 +2872,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "QR_0"
+                          "name": "QueueRow0"
                         },
                         "position": {
                           "basis": "26px"
@@ -2963,7 +2963,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "QR_1"
+                          "name": "QueueRow1"
                         },
                         "position": {
                           "basis": "26px"
@@ -3054,7 +3054,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "QR_2"
+                          "name": "QueueRow2"
                         },
                         "position": {
                           "basis": "26px"
@@ -3145,7 +3145,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "QR_3"
+                          "name": "QueueRow3"
                         },
                         "position": {
                           "basis": "26px"

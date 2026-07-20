@@ -16,7 +16,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
 . "$SCRIPT_DIR/lib.sh"
-cd "$PROJECT_ROOT"
+cd "$PROJECT_ROOT" || exit 1
 
 rc=0
 

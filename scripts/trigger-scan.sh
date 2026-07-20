@@ -12,13 +12,13 @@
 # Usage:
 #   scripts/trigger-scan.sh                          # both, against local
 #   scripts/trigger-scan.sh projects                 # projects only
-#   scripts/trigger-scan.sh both --gateway dev       # both, against dev gateway
-#   scripts/trigger-scan.sh --gateway prod config    # config only, against prod
+#   scripts/trigger-scan.sh both --gateway test       # both, against test gateway
+#   scripts/trigger-scan.sh --gateway production config    # config only, against production
 #
 # Gateways:
 #   local   http://localhost:8088   (default — student's bind-mounted gateway)
-#   dev     http://localhost:8089   (deploy.yml target)
-#   prod    http://localhost:8090   (release.yml target)
+#   test     http://localhost:8089   (deploy.yml target)
+#   production    http://localhost:8090   (release.yml target)
 #
 # Env (override the gateway defaults when needed):
 #   IGNITION_URL          full URL; if set, wins over --gateway preset
@@ -41,20 +41,16 @@ CURL_MAX_TIME=30   # seconds; protects against a hung gateway
 
 target="both"
 gateway="local"
-positional_set=0
-gateway_set=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --gateway=*)
       gateway="${1#*=}"
-      gateway_set=1
       shift
       ;;
     --gateway)
       [ $# -ge 2 ] || { echo "ERROR: --gateway requires a value" >&2; exit 2; }
       gateway="$2"
-      gateway_set=1
       shift 2
       ;;
     -h|--help)
@@ -67,7 +63,6 @@ while [ $# -gt 0 ]; do
       ;;
     projects|config|both)
       target="$1"
-      positional_set=1
       shift
       ;;
     *)
@@ -78,9 +73,9 @@ while [ $# -gt 0 ]; do
 done
 
 case "$gateway" in
-  local|dev|prod) ;;
+  local|test|production) ;;
   *)
-    echo "ERROR: unknown gateway: $gateway (expected: local | dev | prod)" >&2
+    echo "ERROR: unknown gateway: $gateway (expected: local | test | production)" >&2
     exit 2
     ;;
 esac

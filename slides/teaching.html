@@ -294,7 +294,7 @@ body{
       <div class="does">
         <div class="hd">What you have after Lab 04</div>
         <ul>
-          <li><span class="d"></span><span><b>A working deploy pipeline:</b> a merge to <code>main</code> ships files into the <b>running</b> dev gateway; a tag ships prod. Rollback: re-run the pipeline on an older tag.</span></li>
+          <li><span class="d"></span><span><b>A working deploy pipeline:</b> a merge to <code>main</code> ships files into the <b>running</b> test gateway; a tag ships production. Rollback: re-run the pipeline on an older tag.</span></li>
           <li><span class="d"></span><span><b>A verified deploy:</b> the pipeline polls the gateway after the scan, so a broken deploy fails the run, loudly.</span></li>
           <li><span class="d"></span><span><b>Everything is files in Git:</b> projects, gateway config, and the deploy scripts themselves.</span></li>
         </ul>
@@ -304,7 +304,7 @@ body{
         <ul>
           <li><span class="d"></span><span><b>The vocabulary:</b> what an image, a Dockerfile and a container actually are, so "deploy an image" stops being magic.</span></li>
           <li><span class="d"></span><span><b>How it's really done:</b> we walk a real production Ignition repo (on screen) that deploys the gateway as a custom image every day: its Dockerfile, its pipeline, its rollback.</span></li>
-          <li><span class="d"></span><span><b>Your own gateway image:</b> you build it locally, bake a change into it, and deploy it by <b>replacing the dev container</b>. Rollback = run the previous build's tag.</span></li>
+          <li><span class="d"></span><span><b>Your own gateway image:</b> you build it locally, bake a change into it, and deploy it by <b>replacing the test container</b>. Rollback = run the previous build's tag.</span></li>
           <li><span class="d"></span><span><b>The honest trade-off:</b> what image-based buys you, what it costs you, and when you'd pick which. Both approaches stay in your toolbox.</span></li>
         </ul>
       </div>
@@ -367,7 +367,7 @@ COPY projects/        <span class="cm">…</span></pre>
     <div class="tf-arr reveal" data-step="3"><div class="a">→</div><div class="t">docker run</div></div>
     <div class="tf-col">
       <div class="tf-box reveal" data-step="3">
-        <div class="bh"><span class="run"></span>container · lab05-ignition-dev</div>
+        <div class="bh"><span class="run"></span>container · lab05-ignition-test</div>
         <div class="tf-stack">
           <div class="tf-layer base">ignition:8.3.6 base</div>
           <div class="tf-layer">layer: services/config/</div>
@@ -525,7 +525,7 @@ ENTRYPOINT ["/usr/local/bin/<span class="hl">entrypoint.sh</span>"]  <span class
           <li><span class="d"></span><span><b>More kinds of cargo.</b> Third-party <span class="mono">.modl</span> files, plain <b>JAR libraries</b> on the gateway classpath, a Jython library, and a <b>db-migrations folder</b>. All of it versioned, all of it baked. Lab 06 teaches each of these properly.</span></li>
           <li><span class="d"></span><span><b>Multi-stage build.</b> Stage 1 exists only to compile one clean binary; the tooling never reaches the shipped image.</span></li>
           <li><span class="d"></span><span><b>Non-root runtime.</b> Builds as root, runs as the Ignition UID (<span class="mono">2003</span>), hence every <span class="mono">COPY --chown</span>.</span></li>
-          <li><span class="d"></span><span><b>The seed trick.</b> <span class="mono">data/</span> is snapshotted to a <b>seed tree</b>; startup scripts re-seed projects and config from it on <b>every boot</b>. Gateway-UI edits on prod are deliberately erased: the image stays the single source of truth.</span></li>
+          <li><span class="d"></span><span><b>The seed trick.</b> <span class="mono">data/</span> is snapshotted to a <b>seed tree</b>; startup scripts re-seed projects and config from it on <b>every boot</b>. Gateway-UI edits on production are deliberately erased: the image stays the single source of truth.</span></li>
         </ul>
       </div>
     </div>
@@ -678,7 +678,7 @@ scripts/
 
     <div class="callout reveal" data-step="6">
       <div class="lab">In this lab: steps 1, 2 and 5, all local</div>
-      <p>A gateway image is <b>around 2 GB</b>. Pushing that through a home connection for every exercise is no fun, so in the assignment you <b>build and tag locally</b> and deploy by recreating the local dev container: same steps 1, 2 and 5, with the registry legs (3 and 4) shown on the next slide instead of exercised. The mechanics are identical; only the transport is missing.</p>
+      <p>A gateway image is <b>around 2 GB</b>. Pushing that through a home connection for every exercise is no fun, so in the assignment you <b>build and tag locally</b> and deploy by recreating the local test container: same steps 1, 2 and 5, with the registry legs (3 and 4) shown on the next slide instead of exercised. The mechanics are identical; only the transport is missing.</p>
     </div>
   </div>
 
@@ -795,9 +795,9 @@ scripts/
       <div>
         <div class="code"><pre><span class="cm"># db-init/01-create-env-databases.sql
 # runs ONCE when the timescaledb volume first initializes</span>
-CREATE DATABASE <span class="hl">ignition_dev</span>;
-CREATE DATABASE <span class="hl">ignition_prd</span>;
-<span class="cm"># (ignition_loc comes from POSTGRES_DB in compose)</span></pre></div>
+CREATE DATABASE <span class="hl">ignition_test</span>;
+CREATE DATABASE <span class="hl">ignition_production</span>;
+<span class="cm"># (ignition_local_development comes from POSTGRES_DB in compose)</span></pre></div>
         <div class="callout" style="margin-top:16px">
           <div class="lab">Ask this question per data kind</div>
           <p>For every piece of state on a gateway: does it belong in the <b>image</b> (comes back on deploy), a <b>volume</b> (survives the container) or a <b>database</b> (survives the machine)? The production repo answers it per folder: user uploads get stashed and restored across the re-seed; everything else is image-owned.</p>
@@ -822,7 +822,7 @@ CREATE DATABASE <span class="hl">ignition_prd</span>;
     <ul class="checks" style="max-width:960px;margin-top:22px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do.</b> We walk the real <span class="mono">Dockerfile</span> and <span class="mono">.dockerignore</span>, build with <span class="mono">scripts/build-image.sh</span>, read the layers with <span class="mono">docker history</span>, and run the image <b>with no bind mounts</b>: the proof it's self-contained.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Part 1.</b> Build and tag the image, bake a config change into it, and extend <span class="mono">.dockerignore</span>.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Part 2.</b> Deploy your local image to the dev gateway by <b>typing the deploy commands yourself</b> (no script: the one-liner IS the lesson), ship a second change end-to-end, then roll back by running the previous tag. All local: no registry, no uploads.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do, Part 2.</b> Deploy your local image to the test gateway by <b>typing the deploy commands yourself</b> (no script: the one-liner IS the lesson), ship a second change end-to-end, then roll back by running the previous tag. All local: no registry, no uploads.</span></li>
     </ul>
     <div class="callout" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14)">
       <div class="lab" style="color:var(--peri2)">Everything is in the repo</div>

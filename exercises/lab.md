@@ -3,7 +3,7 @@
 **Duration:** ~3 hours, in two parts
 
 1. **Build the gateway image** (~90 min) — bake project, config, **and modules** into immutable Docker layers, prove the image is self-contained, and learn to read the layer cache.
-2. **Deploy the image** (~90 min) — deploy to the dev gateway by recreating the container, ship a change end-to-end, and roll back by running the previous build's tag.
+2. **Deploy the image** (~90 min) — deploy to the test gateway by recreating the container, ship a change end-to-end, and roll back by running the previous build's tag.
 
 The second part deploys exactly the image you build in the first. Do them in order.
 
@@ -163,10 +163,10 @@ You're finished with part 1 when:
 
 ## Debrief (10 min)
 
-- The image is immutable, but the gateway still writes runtime state (internal DB, logs) at `data/`. Where does that go in our dev/prod setup, and why is it safe to throw away on each deploy? (Hint: look at what's *not* a volume in `docker-compose.yaml`, and where historian data lives.)
+- The image is immutable, but the gateway still writes runtime state (internal DB, logs) at `data/`. Where does that go in our test/production setup, and why is it safe to throw away on each deploy? (Hint: look at what's *not* a volume in `docker-compose.yaml`, and where historian data lives.)
 - We pin `inductiveautomation/ignition:8.3.6`, not `:latest`. Why does an immutable-artifact philosophy demand a pinned base?
 - Lab 04's `.deployignore` was read by a shell loop in the workflow; Lab 05's `.dockerignore` is read by the Docker daemon. What does moving that responsibility *into the tool* buy you?
-- In part 2 this image gets deployed — and in a real pipeline it would go through a registry first. What's the one tag you'd never want to deploy to prod by name, and why? (Foreshadow: moving vs. immutable tags.)
+- In part 2 this image gets deployed — and in a real pipeline it would go through a registry first. What's the one tag you'd never want to deploy to production by name, and why? (Foreshadow: moving vs. immutable tags.)
 
 ---
 
@@ -187,35 +187,35 @@ registry.
 ## Pre-flight
 
 Part 1 finished: you have a built image tagged `:sha-<short>` + `:local`, and
-`scripts/setup.sh` has the stack up (local gateway :8088, dev gateway :8089,
+`scripts/setup.sh` has the stack up (local gateway :8088, test gateway :8089,
 TimescaleDB).
 
 ## We-do (15 min)
 
-Together, we deploy the part 1 image to the dev gateway once:
+Together, we deploy the part 1 image to the test gateway once:
 
-1. **Before:** `docker inspect -f '{{.Config.Image}}' lab05-ignition-dev` — dev runs the plain base image (an empty gateway).
+1. **Before:** `docker inspect -f '{{.Config.Image}}' lab05-ignition-test` — test runs the plain base image (an empty gateway).
 2. **Deploy — one command:**
    ```bash
-   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-dev
+   IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-test
    ```
-   `docker-compose.yaml` interpolates `IGNITION_DEV_IMAGE` into the dev service's
+   `docker-compose.yaml` interpolates `IGNITION_TEST_IMAGE` into the test service's
    `image:`; compose sees a new image and recreates the container.
 3. **Wait for RUNNING:** `curl -s localhost:8089/StatusPing` until it prints
    RUNNING (a fresh-image boot re-commissions the gateway — give it a few minutes).
-4. **Verify:** open http://localhost:8089/app/home/perspective/session-launcher and launch example-project — the baked project is live. No copy, no scan: the container was **replaced**. Inspect again — dev now runs your image.
+4. **Verify:** open http://localhost:8089/app/home/perspective/session-launcher and launch example-project — the baked project is live. No copy, no scan: the container was **replaced**. Inspect again — test now runs your image.
 5. **What persisted:** historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.
 
 ## You do (40 min)
 
-### Part 2.1 — Deploy your image to dev, command by command (10 min)
+### Part 2.1 — Deploy your image to test, command by command (10 min)
 
 Repeat the we-do yourself, from your own build:
 
-1. Confirm which image dev runs (`docker inspect -f '{{.Config.Image}}' lab05-ignition-dev`).
+1. Confirm which image test runs (`docker inspect -f '{{.Config.Image}}' lab05-ignition-test`).
 2. Deploy:
    ```bash
-   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-dev
+   IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-test
    ```
 3. Poll `curl -s localhost:8089/StatusPing` until RUNNING, then verify at :8089 and inspect again.
 
@@ -235,30 +235,30 @@ gets its own immutable `:sha` tag — that tag is your rollback point in Part 2.
 4. Rebuild + redeploy:
    ```bash
    scripts/build-image.sh
-   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-dev
+   IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local docker compose up -d ignition-test
    ```
 5. Verify at :8089 — your change is live. `docker images` now shows **two** `:sha-…` tags: two deployable versions, both still on your machine.
 
 ### Part 2.3 — Roll back to the previous build (10 min)
 
-1. Pretend Part 2.2's change broke something on dev. You need the previous version back, now.
+1. Pretend Part 2.2's change broke something on test. You need the previous version back, now.
 2. Deploy the **old** tag you wrote down in step 1 of Part 2.2 — the same command, older name:
    ```bash
-   IGNITION_DEV_IMAGE=cicd-lab-05-ignition:sha-<the-old-short-sha> docker compose up -d ignition-dev
+   IGNITION_TEST_IMAGE=cicd-lab-05-ignition:sha-<the-old-short-sha> docker compose up -d ignition-test
    ```
 3. Verify at :8089 — the view is back to its previous state.
 4. Count the irreversible steps you just took. (Zero: both versions still exist, and you can flip between them all afternoon.)
 
 ## Definition of done (part 2)
 
-- [ ] The dev gateway (:8089) runs **your** image, proven with `docker inspect`.
-- [ ] You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on dev.
+- [ ] The test gateway (:8089) runs **your** image, proven with `docker inspect`.
+- [ ] You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on test.
 - [ ] Your image store holds **two immutable `:sha` tags**, one per build, each traceable to its commit via the revision label.
-- [ ] You rolled dev back to the older tag and verified the old view is live again.
+- [ ] You rolled test back to the older tag and verified the old view is live again.
 - [ ] You checked that historian data survived both deploys, and can say why.
 - [ ] You can name the two steps a production pipeline adds between your build and your run (push + pull), and why we skipped them today.
 
-> **Fresh gateway alert.** Each deploy gave dev a brand-new gateway: new internal
+> **Fresh gateway alert.** Each deploy gave test a brand-new gateway: new internal
 > DB, new trial clock, gone are any UI-made edits. If that surprised you, good —
 > that's the "fresh gateway" disadvantage from the teaching, experienced
 > first-hand.
@@ -276,20 +276,20 @@ Three directions, pick by appetite:
       no-push image build). Merge to `main` → `deploy.yml` builds on a free
       GitHub-hosted runner and pushes to **your** GHCR namespace.
    2. Open the run's summary page. It prints the image name it just built. Pull it
-      and point dev at it — the same two commands you used all through part 2, only
+      and point test at it — the same two commands you used all through part 2, only
       the image name is longer:
       ```bash
       docker pull ghcr.io/<your-user>/cicd-lab-05-ignition:sha-<short>
-      IGNITION_DEV_IMAGE=ghcr.io/<your-user>/cicd-lab-05-ignition:sha-<short> \
-        docker compose up -d ignition-dev
+      IGNITION_TEST_IMAGE=ghcr.io/<your-user>/cicd-lab-05-ignition:sha-<short> \
+        docker compose up -d ignition-test
       ```
-   3. `git tag v0.1.0 && git push origin v0.1.0` → `release.yml` re-tags `:dev` to
-      `:v0.1.0` + `:prod` — **no rebuild**. Deploy it to prod (:8090) the same way,
-      with `IGNITION_PROD_IMAGE`.
-   4. The payoff — prove dev and prod run the **same digest**:
+   3. `git tag v0.1.0 && git push origin v0.1.0` → `release.yml` re-tags `:test` to
+      `:v0.1.0` + `:production` — **no rebuild**. Deploy it to production (:8090) the same way,
+      with `IGNITION_PRODUCTION_IMAGE`.
+   4. The payoff — prove test and production run the **same digest**:
       ```bash
-      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-dev
-      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-prod
+      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-test
+      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-production
       ```
    5. **Observe what's still manual:** you typed the image name twice. That last
       mile — a machine that owns the gateway, picking up the tag on its own — is
@@ -302,7 +302,7 @@ Three directions, pick by appetite:
 3. **A first taste of Lab 06** — bake more kinds of cargo, the way the
    production image from the teaching does:
    - **A third-party module:** enable an unused `.modl` from
-     `third-party-modules/` in `services/modules.json`, rebuild, deploy to dev,
+     `third-party-modules/` in `services/modules.json`, rebuild, deploy to test,
      find it under Config → Modules.
    - **A migrations folder:** create
      `db-migrations/0001_create_downtime_log.up.sql` with a simple

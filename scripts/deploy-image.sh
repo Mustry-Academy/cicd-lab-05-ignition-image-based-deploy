@@ -6,16 +6,16 @@
 # half that has to happen next to the gateway, which is why this lab has you run
 # it by hand instead of from CI.
 #
-# How it works: docker-compose.yaml reads IGNITION_DEV_IMAGE / IGNITION_PROD_IMAGE
-# to decide which image the dev/prod gateway runs. This script sets that variable
+# How it works: docker-compose.yaml reads IGNITION_TEST_IMAGE / IGNITION_PRODUCTION_IMAGE
+# to decide which image the test/production gateway runs. This script sets that variable
 # and runs `docker compose up -d ignition-<env>`, which recreates the container
 # because its image changed. No file copy, no scan — the project/config/modules
 # are already inside the image.
 #
 # Usage:
-#   scripts/deploy-image.sh dev                      # deploy <repo>:local to dev
-#   scripts/deploy-image.sh dev <repo>:sha-abc1234   # deploy a specific tag
-#   scripts/deploy-image.sh prod <repo>:v0.1.0       # promote a tag to prod
+#   scripts/deploy-image.sh test                      # deploy <repo>:local to test
+#   scripts/deploy-image.sh test <repo>:sha-abc1234   # deploy a specific tag
+#   scripts/deploy-image.sh production <repo>:v0.1.0       # promote a tag to production
 #
 # Note: deploying to `local` is not supported — local is your bind-mounted
 # authoring gateway, not an image target.
@@ -29,9 +29,9 @@ ENV_NAME="${1:-}"
 IMAGE="${2:-}"
 
 case "$ENV_NAME" in
-  dev|prod) ;;
+  test|production) ;;
   -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-  *) echo "ERROR: first arg must be 'dev' or 'prod' (got '${ENV_NAME:-}')" >&2; exit 2 ;;
+  *) echo "ERROR: first arg must be 'test' or 'production' (got '${ENV_NAME:-}')" >&2; exit 2 ;;
 esac
 
 command -v docker >/dev/null || { echo -e "${RED}docker not installed${NC}" >&2; exit 1; }
@@ -55,10 +55,10 @@ echo -e "${GREEN}Deploying${NC} $IMAGE → $ENV_NAME gateway ($CONTAINER)"
 
 # Recreate just this service from the new image. The env var override is what
 # docker-compose.yaml interpolates into the service's `image:`.
-if [ "$ENV_NAME" = "dev" ]; then
-  IGNITION_DEV_IMAGE="$IMAGE" docker compose up -d "$SERVICE"
+if [ "$ENV_NAME" = "test" ]; then
+  IGNITION_TEST_IMAGE="$IMAGE" docker compose up -d "$SERVICE"
 else
-  IGNITION_PROD_IMAGE="$IMAGE" docker compose up -d "$SERVICE"
+  IGNITION_PRODUCTION_IMAGE="$IMAGE" docker compose up -d "$SERVICE"
 fi
 
 echo -e "${GREEN}Waiting for $ENV_NAME gateway at $URL to become RUNNING...${NC}"

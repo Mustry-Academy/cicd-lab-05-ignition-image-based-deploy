@@ -12,7 +12,7 @@
 #
 # Usage:
 #   scripts/build-image.sh                 # build, tag :sha-<short> and :local
-#   scripts/build-image.sh --tag dev       # also tag :dev
+#   scripts/build-image.sh --tag test       # also tag :test
 #   IGNITION_IMAGE_REPO=ghcr.io/me/x scripts/build-image.sh
 #
 # The repo base comes from IGNITION_IMAGE_REPO (env or .env); without it, images
@@ -66,5 +66,5 @@ echo "    -e GATEWAY_ADMIN_USERNAME=admin -e GATEWAY_ADMIN_PASSWORD=password \\"
 echo "    ${REPO}:sha-${SHA} -n demo -- -Dignition.allowunsignedmodules=true"
 echo "  # then open http://localhost:9088"
 echo ""
-echo "Or deploy it to the dev gateway:"
-echo "  scripts/deploy-image.sh dev ${REPO}:sha-${SHA}"
+echo "Or deploy it to the test gateway:"
+echo "  scripts/deploy-image.sh test ${REPO}:sha-${SHA}"

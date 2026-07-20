@@ -1,0 +1,23 @@
+# yamllint configuration for the lab.
+# Carried over from Lab 03 so the YAML rules stay consistent across the course.
+# We disable line-length because Compose files often have legitimately long
+# environment lines that don't benefit from wrapping.
+
+extends: default
+
+# Keep the linter out of anything we don't own.
+ignore: |
+  .venv/
+  third-party-modules/
+
+rules:
+  line-length: disable
+  # Compose files use the shorthand "key: value" style; document-start is noise here.
+  document-start: disable
+  # Allow a trailing newline (some editors strip them; this is a lab, not a kernel).
+  empty-lines:
+    max-end: 1
+  # GitHub Actions workflows use `on:` as a key; without this, yamllint flags every
+  # workflow because `on` is a YAML truthy value. A well-known annoyance.
+  truthy:
+    check-keys: false

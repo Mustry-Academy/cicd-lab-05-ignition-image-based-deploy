@@ -1,20 +1,20 @@
-# Build a gateway image and deploy it to the dev gateway on push to main.
+# Build a gateway image and deploy it to the test gateway on push to main.
 #
 # GitHub flow: `main` is the only long-lived branch. Feature branches merge into
-# it via PR, and every push here builds an image and ships it to the DEV
-# gateway. Releases to prod happen separately (tag vX.Y.Z → release.yml).
+# it via PR, and every push here builds an image and ships it to the TEST
+# gateway. Releases to production happen separately (tag vX.Y.Z → release.yml).
 #
 # This workflow BUILDS ONLY. It runs entirely on a free GitHub-hosted runner:
 #
 #   build  (ubuntu-latest, GitHub-hosted, FREE)
 #     → docker build bakes projects/config/modules into a MULTI-ARCH image
 #       (linux/amd64 + linux/arm64) so it runs natively on Intel and Apple Silicon
-#     → push it to GHCR tagged :sha-<short> (immutable) and :dev (moving)
+#     → push it to GHCR tagged :sha-<short> (immutable) and :test (moving)
 #     → print the image ref in the run summary
 #
 # There is deliberately NO deploy job. Deploying means pointing a gateway at a
 # new image name, and in this lab you do that by hand: copy the printed tag into
-# IGNITION_DEV_IMAGE and run `docker compose up -d ignition-dev` yourself. That
+# IGNITION_TEST_IMAGE and run `docker compose up -d ignition-test` yourself. That
 # keeps the lab free of self-hosted runners — the build half of the pattern is
 # portable, and automating the last mile is what Lab 06/07 build on top.
 #
@@ -36,7 +36,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: build-dev-image
+  group: build-test-image
   cancel-in-progress: false
 
 permissions:
@@ -47,8 +47,15 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  # Re-run the full CI suite (ci.yml as a reusable workflow) before anything
+  # is built and pushed. PRs already ran it, but this also covers direct
+  # pushes to main — the build job below only starts if validation is green.
+  validate:
+    uses: ./.github/workflows/ci.yml
+
   build:
     name: Build and push image
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +63,7 @@ jobs:
       - name: Compute image name + tags
         id: meta
         # GHCR requires a lowercase path. Derive it from the owner, append a
-        # stable repo suffix, and tag with the short SHA (immutable) + dev.
+        # stable repo suffix, and tag with the short SHA (immutable) + test.
         run: |
           set -euo pipefail
           owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
@@ -67,7 +74,7 @@ jobs:
             echo "short=${short}"
             echo "image=${base}:sha-${short}"
           } >> "$GITHUB_OUTPUT"
-          echo "Image: ${base}:sha-${short} (+ :dev)"
+          echo "Image: ${base}:sha-${short} (+ :test)"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -97,7 +104,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             ${{ steps.meta.outputs.base }}:sha-${{ steps.meta.outputs.short }}
-            ${{ steps.meta.outputs.base }}:dev
+            ${{ steps.meta.outputs.base }}:test
           build-args: |
             GIT_SHA=${{ steps.meta.outputs.short }}
             IMAGE_SOURCE=${{ github.server_url }}/${{ github.repository }}
@@ -116,11 +123,11 @@ jobs:
             echo "${{ steps.meta.outputs.base }}:sha-${{ steps.meta.outputs.short }}"
             echo '```'
             echo
-            echo "Deploy it to your dev gateway by hand:"
+            echo "Deploy it to your test gateway by hand:"
             echo
             echo '```bash'
             echo "docker pull ${{ steps.meta.outputs.base }}:sha-${{ steps.meta.outputs.short }}"
-            echo "IGNITION_DEV_IMAGE=${{ steps.meta.outputs.base }}:sha-${{ steps.meta.outputs.short }} \\"
-            echo "  docker compose up -d ignition-dev"
+            echo "IGNITION_TEST_IMAGE=${{ steps.meta.outputs.base }}:sha-${{ steps.meta.outputs.short }} \\"
+            echo "  docker compose up -d ignition-test"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

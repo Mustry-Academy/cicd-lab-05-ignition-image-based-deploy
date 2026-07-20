@@ -32,7 +32,7 @@ scripts/
 slides/
 tests/
 
-# CI / compose / dev-only files
+# CI / compose / test-only files
 .github/
 docker-compose.yaml
 Dockerfile
@@ -65,7 +65,7 @@ services/config/resources/core/ignition/identity-provider/default/
 # WITHOUT its matching user source plays safe: it creates a temp_N identity
 # and rewrites the file to point at it. Keep the file out of the image and
 # commissioning instead creates the clean `default` identity from the
-# container's GATEWAY_ADMIN_* env vars — the same end state Lab 04's dev/prod
+# container's GATEWAY_ADMIN_* env vars — the same end state Lab 04's test/production
 # gateways reach. (A production image CAN bake it when systemAuthProfile
 # names a deployable user source, e.g. an AD/database one, instead of the
 # gateway-owned internal one.)

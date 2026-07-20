@@ -48,11 +48,11 @@ One image, several names:
 | Tag | Kind | Set by | Use |
 |---|---|---|---|
 | `:sha-<short>` | **Immutable** | build | The thing you actually deploy. A SHA tag always points at one specific build. |
-| `:dev` | Moving | build | "Whatever's latest on dev." Convenient pointer, never deploy *by this name* (it moves under you). |
+| `:test` | Moving | build | "Whatever's latest on test." Convenient pointer, never deploy *by this name* (it moves under you). |
 | `:vX.Y.Z` | **Immutable** | promote | A released version. Re-tag of the tested `:sha-…`, no rebuild. |
-| `:prod` | Moving | promote | "Whatever's live in prod." Same caveat as `:dev`. |
+| `:production` | Moving | promote | "Whatever's live in production." Same caveat as `:test`. |
 
-Rule of thumb: **deploy immutable tags, navigate with moving tags.** `deploy.yml` recreates the gateway from `:sha-<short>`, not `:dev`, precisely so the running container pins to one build.
+Rule of thumb: **deploy immutable tags, navigate with moving tags.** `deploy.yml` recreates the gateway from `:sha-<short>`, not `:test`, precisely so the running container pins to one build.
 
 ## Provenance labels
 
@@ -68,13 +68,13 @@ CI passes `--build-arg GIT_SHA=$(git rev-parse --short HEAD)`. Read it back from
 docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' <image>
 ```
 
-That's how you answer "what commit is prod actually running?" months later.
+That's how you answer "what commit is production actually running?" months later.
 
 ## Startup behaviour
 
 On first boot the container has the baked `data/projects` and `data/config` but no internal gateway database yet, so the IA entrypoint **commissions** the gateway: it applies the admin credentials from the env vars and scans the baked content. With `GATEWAY_RESTORE_DISABLED=true` it won't try to restore a backup. Net effect: a fresh container comes up already serving your project — no manual scan, no `docker cp`.
 
-Because dev/prod have **no persistent data volume** (see `docker-compose.yaml`), every deploy re-commissions from the image. That's the immutable model: the container is disposable; durable data lives in TimescaleDB.
+Because test/production have **no persistent data volume** (see `docker-compose.yaml`), every deploy re-commissions from the image. That's the immutable model: the container is disposable; durable data lives in TimescaleDB.
 
 ## Build context and `.dockerignore`
 

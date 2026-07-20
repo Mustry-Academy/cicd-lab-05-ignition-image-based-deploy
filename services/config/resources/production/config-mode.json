@@ -1,6 +1,6 @@
 {
-  "title": "dev",
-  "description": "dev",
+  "title": "production",
+  "description": "production",
   "enabled": true,
   "inheritable": true,
   "parent": "core"

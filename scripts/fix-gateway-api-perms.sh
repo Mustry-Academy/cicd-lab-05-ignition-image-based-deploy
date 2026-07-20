@@ -4,7 +4,7 @@
 #
 # Why this exists: the image bakes services/config with an api-token (`cicd`)
 # plus security-properties granting APIToken Access/Read/Write. But when a
-# FRESH container boots (every image deploy recreates dev/prod), the gateway's
+# FRESH container boots (every image deploy recreates test/production), the gateway's
 # auto-commissioning (driven by GATEWAY_ADMIN_USERNAME/PASSWORD) creates a new
 # temp_N user source and RESETS readPermissions/writePermissions to
 # Roles/Administrator only — which an API token can never hold. Result: the
@@ -14,20 +14,20 @@
 # commissioning chose), restarts the gateway, and the key works.
 #
 # The LOCAL gateway only ever needs this once (its data volume persists, so
-# commissioning runs a single time). Dev/prod need it after each image deploy
+# commissioning runs a single time). Test/production need it after each image deploy
 # — or wire it into the deploy flow.
 #
 # Usage:
-#   scripts/fix-gateway-api-perms.sh dev
-#   scripts/fix-gateway-api-perms.sh prod
-#   scripts/fix-gateway-api-perms.sh local dev prod
+#   scripts/fix-gateway-api-perms.sh test
+#   scripts/fix-gateway-api-perms.sh production
+#   scripts/fix-gateway-api-perms.sh local test production
 
 set -euo pipefail
 
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 command -v python3 >/dev/null || { echo -e "${RED}python3 is required${NC}" >&2; exit 1; }
-[ $# -ge 1 ] || { echo "Usage: $0 <local|dev|prod> [more gateways...]" >&2; exit 2; }
+[ $# -ge 1 ] || { echo "Usage: $0 <local|test|production> [more gateways...]" >&2; exit 2; }
 
 SECPROPS_PATH=/usr/local/bin/ignition/data/config/resources/core/ignition/security-properties/config.json
 
@@ -71,8 +71,8 @@ PYEOF
 }
 
 wait_running() {
-  local url="$1" i
-  for i in $(seq 1 60); do
+  local url="$1"
+  for _ in $(seq 1 60); do
     if curl -fsS -m 3 "$url/StatusPing" 2>/dev/null | grep -q RUNNING; then
       return 0
     fi

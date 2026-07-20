@@ -1,36 +1,81 @@
-# PR validation — runs on every pull request into main.
+# Validation — runs on every pull request into main, AND as the gate job
+# inside deploy.yml / release.yml (via workflow_call).
 #
 # GitHub flow has a single long-lived branch:
-#   main  ← feature/* branches merge here via PR (then deploy.yml ships to dev,
-#           and a vX.Y.Z tag ships to prod via release.yml)
+#   main  ← feature/* branches merge here via PR (then deploy.yml ships to test,
+#           and a vX.Y.Z tag ships to production via release.yml)
 #
 # Purpose: catch the cheap stuff before a build/deploy gets near it. Everything
 # here runs on ubuntu-latest (free, no self-hosted runner). The expensive,
 # environment-specific half (pushing the image, recreating the gateway) lives in
-# deploy.yml / release.yml.
+# deploy.yml / release.yml. The linters mirror the ones Lab 03 introduced
+# (yamllint, actionlint, shellcheck, ign-lint) plus this lab's own JSON /
+# .dockerignore checks.
 #
-# The one image-specific addition vs a file-based lab: we actually BUILD the
-# image here (without pushing) so a broken Dockerfile fails the PR, not the
-# deploy.
+# The one image-specific addition vs a file-based lab: the `build` job actually
+# BUILDS the image (without pushing) so a broken Dockerfile fails the PR, not
+# the deploy.
 
 name: CI
 
 on:
   pull_request:
     branches: [main]
+  # Lets deploy.yml and release.yml reuse this whole workflow as their first
+  # job, so nothing is built or promoted without passing the exact same checks
+  # a PR gets — including direct pushes to main, which never see a PR.
+  workflow_call:
 
+# Cancel any in-flight CI run for this PR when a new commit lands.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default.
 permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate
+  # Job ids double as the status-check names branch protection matches on
+  # (Lab 03: a job's check name is its id unless you override it with `name:`).
+  # Keep them stable — renaming silently orphans required checks configured on
+  # main.
+  lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python tools
+        run: pip install yamllint==1.35.1 ign-lint==0.6.1
+
+      - name: yamllint
+        run: yamllint -c .yamllint.yml .
+
+      - name: actionlint
+        uses: raven-actions/actionlint@v2
+
+      - name: shellcheck
+        # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck -x scripts/*.sh
+
+      - name: ignition-lint (Perspective views)
+        run: ign-lint --config rule_config.json --files "projects/**/view.json"
+
+      - name: docker compose config
+        run: docker compose config -q
+
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
@@ -68,24 +113,26 @@ jobs:
           [ "$fail" -eq 0 ] && echo ".dockerignore exclusions look fine."
           exit $fail
 
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
       - name: hadolint (Dockerfile)
         # Lints the Dockerfile for common mistakes (unpinned base, bad COPY, etc).
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
 
-      - name: actionlint
-        # Statically check every workflow file in .github/workflows/.
-        run: |
-          bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          ./actionlint -color
-
       - name: Build image (smoke test, no push)
         # Prove the Dockerfile builds against the real project/config/modules.
         # We do NOT push here — pushing happens in deploy.yml after merge.
+        # On a PR the head SHA is baked in; when reused via workflow_call
+        # (the deploy/release gate) there is no PR, so fall back to github.sha.
         uses: docker/build-push-action@v6
         with:
           context: .
           push: false
           build-args: |
-            GIT_SHA=${{ github.event.pull_request.head.sha }}
+            GIT_SHA=${{ github.event.pull_request.head.sha || github.sha }}

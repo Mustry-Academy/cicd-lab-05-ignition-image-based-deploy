@@ -1,28 +1,28 @@
-# Promote the tested DEV image to prod on tag push (GitHub flow release).
+# Promote the tested :test image to production on tag push (GitHub flow release).
 #
 # GitHub flow: a release is tagging a commit on `main` with `vX.Y.Z`. That tag
 # fires this workflow. We do NOT promote by rebuilding from the tagged commit —
-# we promote the image currently running on dev (the `:dev` tag, which
-# `deploy.yml` published from `main`). "Ship exactly what dev validated": a
-# rebuild could pull a newer base layer and ship bytes dev never tested.
+# we promote the image currently running on test (the `:test` tag, which
+# `deploy.yml` published from `main`). "Ship exactly what test validated": a
+# rebuild could pull a newer base layer and ship bytes the test gateway never tested.
 #
-# The image-based payoff: we do NOT rebuild. The `:dev` image is RE-TAGGED to
-# :vX.Y.Z + :prod with a server-side manifest copy (`docker buildx imagetools
-# create`) — same bytes, same digest dev ran. Then prod is recreated from it.
+# The image-based payoff: we do NOT rebuild. The `:test` image is RE-TAGGED to
+# :vX.Y.Z + :production with a server-side manifest copy (`docker buildx imagetools
+# create`) — same bytes, same digest test ran. Then production is recreated from it.
 #
 # One job, on a free GitHub-hosted runner:
-#   promote (ubuntu-latest)  re-tag :dev → :vX.Y.Z + :prod  (no rebuild)
+#   promote (ubuntu-latest)  re-tag :test → :vX.Y.Z + :production  (no rebuild)
 #
-# There is deliberately NO deploy job. Pointing the prod gateway at the promoted
-# tag is done by hand (IGNITION_PROD_IMAGE + `docker compose up -d
-# ignition-prod`) — this lab runs no self-hosted runner.
+# There is deliberately NO deploy job. Pointing the production gateway at the promoted
+# tag is done by hand (IGNITION_PRODUCTION_IMAGE + `docker compose up -d
+# ignition-production`) — this lab runs no self-hosted runner.
 #
 # Triggers on tags matching `v*` (e.g. v1.0.0). Also supports manual dispatch
 # with a version input — that's the rollback button: re-promote any ALREADY
-# RELEASED version's image (:vX.Y.Z) back to prod without touching git.
+# RELEASED version's image (:vX.Y.Z) back to production without touching git.
 #
 # Add required reviewers on a GitHub environment if you want a manual approval
-# gate before prod releases — common pattern, no workflow change needed.
+# gate before production releases — common pattern, no workflow change needed.
 
 name: Release
 
@@ -32,12 +32,12 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Already-released version to re-promote to prod (e.g. v1.0.0)'
+        description: 'Already-released version to re-promote to production (e.g. v1.0.0)'
         required: true
         type: string
 
 concurrency:
-  group: promote-prod-image
+  group: promote-production-image
   cancel-in-progress: false
 
 permissions:
@@ -48,8 +48,15 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  # Same gate as deploy.yml: the tagged commit must pass the full CI suite
+  # before its image is promoted to production. Tags never go through a PR, so
+  # without this a bad tag would promote unvalidated.
+  validate:
+    uses: ./.github/workflows/ci.yml
+
   promote:
-    name: Promote tested image to prod tag
+    name: Promote tested image to production tag
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       # No checkout needed — the promote job only re-tags images in the registry.
@@ -62,13 +69,13 @@ jobs:
           base="${REGISTRY}/${owner}/cicd-lab-05-ignition"
           if [ -n "${{ github.event.inputs.tag }}" ]; then
             # Manual dispatch = rollback / re-promote: the source is an image that
-            # was ALREADY released under :vX.Y.Z. We re-point :prod at it.
+            # was ALREADY released under :vX.Y.Z. We re-point :production at it.
             version="${{ github.event.inputs.tag }}"
             source="${base}:${version}"
           else
-            # Tag push = new release: promote whatever dev is running right now.
+            # Tag push = new release: promote whatever the test gateway is running right now.
             version="${{ github.ref_name }}"
-            source="${base}:dev"
+            source="${base}:test"
           fi
           {
             echo "base=${base}"
@@ -76,7 +83,7 @@ jobs:
             echo "version=${version}"
             echo "image=${base}:${version}"
           } >> "$GITHUB_OUTPUT"
-          echo "Promote ${source}  →  ${base}:${version} + ${base}:prod"
+          echo "Promote ${source}  →  ${base}:${version} + ${base}:production"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -86,37 +93,37 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Re-tag the tested image (no rebuild)
-        # imagetools copies the manifest server-side: the prod tags point at the
-        # exact same digest dev tested. If this fails with "not found":
-        #   - new release → there is no :dev image yet; push to `main` so
+        # imagetools copies the manifest server-side: the production tags point at the
+        # exact same digest the test gateway tested. If this fails with "not found":
+        #   - new release → there is no :test image yet; push to `main` so
         #     deploy.yml builds and ships one first.
         #   - rollback → that version was never released (no :vX.Y.Z image).
         run: |
           set -euo pipefail
           docker buildx imagetools create \
             --tag "${{ steps.meta.outputs.image }}" \
-            --tag "${{ steps.meta.outputs.base }}:prod" \
+            --tag "${{ steps.meta.outputs.base }}:production" \
             "${{ steps.meta.outputs.source }}"
 
       - name: Tell me how to deploy this release
         # No deploy job in this lab — promoting a release is a registry
-        # operation, and pointing prod at the promoted tag is done by hand.
+        # operation, and pointing production at the promoted tag is done by hand.
         run: |
           {
             echo "### Released ${{ steps.meta.outputs.version }}"
             echo
-            echo "Same digest dev tested, now tagged:"
+            echo "Same digest the test gateway tested, now tagged:"
             echo
             echo '```'
             echo "${{ steps.meta.outputs.image }}"
-            echo "${{ steps.meta.outputs.base }}:prod"
+            echo "${{ steps.meta.outputs.base }}:production"
             echo '```'
             echo
-            echo "Deploy it to your prod gateway by hand:"
+            echo "Deploy it to your production gateway by hand:"
             echo
             echo '```bash'
             echo "docker pull ${{ steps.meta.outputs.image }}"
-            echo "IGNITION_PROD_IMAGE=${{ steps.meta.outputs.image }} \\"
-            echo "  docker compose up -d ignition-prod"
+            echo "IGNITION_PRODUCTION_IMAGE=${{ steps.meta.outputs.image }} \\"
+            echo "  docker compose up -d ignition-production"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

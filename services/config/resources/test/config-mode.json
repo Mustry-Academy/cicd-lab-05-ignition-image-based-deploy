@@ -1,6 +1,6 @@
 {
-  "title": "loc",
-  "description": "loc",
+  "title": "test",
+  "description": "test",
   "enabled": true,
   "inheritable": true,
   "parent": "core"

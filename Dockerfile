@@ -11,8 +11,8 @@
 # Contrast with Lab 04 (file-based): there, the same files were `docker cp`-ed
 # into a *running* gateway and picked up by a hot scan. Here the files become
 # layers in an image. You deploy by pulling the image and recreating the
-# container — no scan, no live mutation. The image you test in dev is the exact
-# image you promote to prod (same digest).
+# container — no scan, no live mutation. The image you validate on the test gateway is the exact
+# image you promote to production (same digest).
 #
 # Why modules belong in the image: a project scan can hot-reload views, scripts,
 # and config, but it CANNOT enable/disable modules — that needs a gateway

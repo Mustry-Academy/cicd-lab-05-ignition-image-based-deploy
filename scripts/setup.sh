@@ -10,7 +10,7 @@
 #   - waits for ALL THREE gateways to become RUNNING
 #   - triggers an initial projects + config scan against the LOCAL gateway
 #     (only if its API key in .env is real, not the example placeholder).
-#     Dev and prod start on the BASE image (empty gateways) by design — they get
+#     Test and production start on the BASE image (empty gateways) by design — they get
 #     replaced by the image deploy.yml builds / release.yml promotes.
 #
 # Re-run safely — every step is idempotent.
@@ -66,9 +66,9 @@ echo ""
 echo "This script initializes the development environment:"
 echo "  - three Ignition 8.3 gateways:"
 echo "      local  http://localhost:8088   (your authoring gateway, bind-mounted from the repo)"
-echo "      dev    http://localhost:8089   (runs the image deploy.yml builds on push to main)"
-echo "      prod   http://localhost:8090   (runs the image release.yml promotes on tag push)"
-echo "  - one TimescaleDB on localhost:5432 hosting ignition_loc / ignition_dev / ignition_prd"
+echo "      test    http://localhost:8089   (runs the image deploy.yml builds on push to main)"
+echo "      production   http://localhost:8090   (runs the image release.yml promotes on tag push)"
+echo "  - one TimescaleDB on localhost:5432 hosting ignition_local_development / ignition_test / ignition_production"
 echo ""
 
 
@@ -128,7 +128,7 @@ pf_persist_lab_gid
 # volume from an earlier stack boots a gateway that skips commissioning yet
 # has no identity on disk: the web UI dies with "Identity provider not found:
 # default". Detect that desync and recreate the container + volume so
-# commissioning runs again on this boot. (Dev/prod have no data volumes —
+# commissioning runs again on this boot. (Test/production have no data volumes —
 # they re-commission from the image + env vars on every deploy by design.)
 compose_project_name() {
     docker compose config --format json 2>/dev/null \
@@ -161,7 +161,7 @@ reset_desynced_local
 # identity, then rewrites security-properties to point at it — permanent git
 # noise AND an auth profile no other gateway has. If it finds NO
 # security-properties, it creates the `default` user source + identity
-# provider, exactly like dev/prod do on every image deploy. So: move the
+# provider, exactly like test/production do on every image deploy. So: move the
 # committed file aside for the first boot, then put it back (it names
 # systemAuthProfile=default, which now exists, and carries the APIToken scan
 # permissions) and restart local.
@@ -250,7 +250,7 @@ restore_secprops_after_commissioning
 # pre-provisioned API key out: it still authenticates (bad key = 401) but every
 # call gets 403. Detect that and graft the APIToken permissions back
 # (scripts/fix-gateway-api-perms.sh restarts the affected gateways). The local
-# gateway only hits this once (persistent volume); dev/prod hit it again on
+# gateway only hits this once (persistent volume); test/production hit it again on
 # every image deploy — the deploy flow handles those.
 probe_scan_api() {
     curl -s -o /dev/null -w '%{http_code}' -m 10 -X POST \
@@ -272,7 +272,7 @@ repair_api_perms() {
             401)
                 # 401 = the gateway never LOADED the token resource. On local
                 # the committed token sits in the bind mount, so a restart is
-                # enough to load it. Dev/prod running the BASE image simply
+                # enough to load it. Test/production running the BASE image simply
                 # don't have the token yet — the first image deploy brings it.
                 if [ "$gw" = "local" ]; then
                     echo -e "${YELLOW}API token not loaded yet on local — restarting it to load the committed token...${NC}"
@@ -293,7 +293,7 @@ repair_api_perms() {
 repair_api_perms
 
 # ---- Initial scan (local only) -------------------------------------------
-# Local has projects on disk from the bind mount; dev/prod start empty by
+# Local has projects on disk from the bind mount; test/production start empty by
 # design (workflows will populate them).
 initial_scan() {
     if [ ! -x "$SCRIPT_DIR/trigger-scan.sh" ]; then
@@ -324,10 +324,10 @@ initial_scan
 # Pull the actual values from .env so the output matches reality.
 ACTUAL_LOCAL_USER="$(env_value GATEWAY_ADMIN_USERNAME_LOCAL)"
 ACTUAL_LOCAL_PASS="$(env_value GATEWAY_ADMIN_PASSWORD_LOCAL)"
-ACTUAL_DEV_USER="$(env_value GATEWAY_ADMIN_USERNAME_DEV)"
-ACTUAL_DEV_PASS="$(env_value GATEWAY_ADMIN_PASSWORD_DEV)"
-ACTUAL_PROD_USER="$(env_value GATEWAY_ADMIN_USERNAME_PROD)"
-ACTUAL_PROD_PASS="$(env_value GATEWAY_ADMIN_PASSWORD_PROD)"
+ACTUAL_TEST_USER="$(env_value GATEWAY_ADMIN_USERNAME_TEST)"
+ACTUAL_TEST_PASS="$(env_value GATEWAY_ADMIN_PASSWORD_TEST)"
+ACTUAL_PRODUCTION_USER="$(env_value GATEWAY_ADMIN_USERNAME_PRODUCTION)"
+ACTUAL_PRODUCTION_PASS="$(env_value GATEWAY_ADMIN_PASSWORD_PRODUCTION)"
 ACTUAL_PG_USER="$(env_value POSTGRES_USER)"
 ACTUAL_PG_PASS="$(env_value POSTGRES_PASSWORD)"
 
@@ -336,12 +336,12 @@ echo -e "${GREEN}Setup complete!${NC}"
 echo ""
 printf "Gateways:\n"
 printf "  %-8s  %-23s  user=%s  pass=%s\n" "local"  "http://localhost:8088"  "${ACTUAL_LOCAL_USER:-admin}"  "${ACTUAL_LOCAL_PASS:-(see .env)}"
-printf "  %-8s  %-23s  user=%s  pass=%s\n" "dev"    "http://localhost:8089"  "${ACTUAL_DEV_USER:-admin}"    "${ACTUAL_DEV_PASS:-(see .env)}"
-printf "  %-8s  %-23s  user=%s  pass=%s\n" "prod"   "http://localhost:8090"  "${ACTUAL_PROD_USER:-admin}"   "${ACTUAL_PROD_PASS:-(see .env)}"
+printf "  %-8s  %-23s  user=%s  pass=%s\n" "test"    "http://localhost:8089"  "${ACTUAL_TEST_USER:-admin}"    "${ACTUAL_TEST_PASS:-(see .env)}"
+printf "  %-8s  %-23s  user=%s  pass=%s\n" "production"   "http://localhost:8090"  "${ACTUAL_PRODUCTION_USER:-admin}"   "${ACTUAL_PRODUCTION_PASS:-(see .env)}"
 echo ""
 echo "TimescaleDB:"
 echo "  Host: localhost  Port: 5432"
-echo "  Databases: ignition_loc, ignition_dev, ignition_prd"
+echo "  Databases: ignition_local_development, ignition_test, ignition_production"
 echo "  Username: ${ACTUAL_PG_USER:-ignition}  Password: ${ACTUAL_PG_PASS:-(see .env)}"
 echo ""
 if is_placeholder_api_key; then
@@ -349,7 +349,7 @@ if is_placeholder_api_key; then
     echo "  The local gateway is your file-based authoring loop. To scan it via the API,"
     echo "  copy the IGNITION_API_KEY line from .env.example into .env — it matches the"
     echo "  pre-provisioned 'cicd' token baked into services/config, so it works as-is."
-    echo "  Dev and prod are NOT scanned — they're redeployed by building/promoting an"
+    echo "  Test and production are NOT scanned — they're redeployed by building/promoting an"
     echo "  image (see exercises/lab.md). No API key needed for them."
     echo ""
 fi
@@ -358,6 +358,6 @@ echo "  docker compose ps                              # check container state"
 echo "  docker logs -f lab05-ignition-local            # tail local gateway logs"
 echo "  scripts/trigger-scan.sh both                   # rescan local (file-based loop)"
 echo "  scripts/build-image.sh                         # build the gateway image"
-echo "  scripts/deploy-image.sh dev <image>            # recreate dev from an image"
+echo "  scripts/deploy-image.sh test <image>            # recreate test from an image"
 echo "  scripts/teardown.sh                            # stop the stack"
 echo "  scripts/teardown.sh --volumes                  # stop and wipe persistent data"

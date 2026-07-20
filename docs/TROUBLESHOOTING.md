@@ -15,13 +15,13 @@ are one of the first three.
 ## A gateway never reaches RUNNING
 
 - Give it time — a cold JVM start is 60–120 s per gateway, and an **image-based** boot re-commissions
-  the gateway, so dev/prod can take a little longer than `local`.
+  the gateway, so test/production can take a little longer than `local`.
 - Check logs (use `docker logs` with the container name, not `docker compose logs`):
   ```bash
-  docker logs --tail 200 lab05-ignition-dev     # or -local / -prod
+  docker logs --tail 200 lab05-ignition-test     # or -local / -production
   ```
 - **Trial expired.** Each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing →
-  Reset Trial*. Note: recreating dev/prod from a fresh image resets their trial clock too.
+  Reset Trial*. Note: recreating test/production from a fresh image resets their trial clock too.
 
 ## `docker build` / `scripts/build-image.sh` fails
 
@@ -88,13 +88,13 @@ setting on your fork:
 
 ## `manifest unknown` when releasing
 
-`release.yml` promotes the **`:dev`** image (what dev is running). If no `:dev` image exists yet, the
+`release.yml` promotes the **`:test`** image (what the test gateway is running). If no `:test` image exists yet, the
 re-tag fails with `manifest unknown`.
 
-- **New release (tag push):** nothing has ever been shipped to dev. Push a change to **`main`** so
-  `deploy.yml` builds and publishes `:dev` first, then tag the release.
+- **New release (tag push):** nothing has ever been shipped to test. Push a change to **`main`** so
+  `deploy.yml` builds and publishes `:test` first, then tag the release.
 - **Rollback (manual dispatch):** the version you asked to re-promote was never released — there's no
-  `:vX.Y.Z` image for it. Use a version that actually shipped to prod before.
+  `:vX.Y.Z` image for it. Use a version that actually shipped to production before.
 
 ## `no matching manifest for linux/arm64/v8` on pull (Apple Silicon)
 
@@ -106,32 +106,32 @@ Fixed by building **multi-arch**: `deploy.yml`'s build job uses `docker/setup-qe
 `platforms: linux/amd64,linux/arm64`, so the pushed image runs natively on both. (Cheap here — the
 Dockerfile is COPY-only, so there's nothing to emulate.)
 
-If you still see it: the existing `:dev` image in GHCR is the **old amd64-only** one. Trigger a fresh
-build (push any gateway-content change to `main`) so a multi-arch `:dev` overwrites it, then the
+If you still see it: the existing `:test` image in GHCR is the **old amd64-only** one. Trigger a fresh
+build (push any gateway-content change to `main`) so a multi-arch `:test` overwrites it, then the
 pull works cleanly. Confirm the published image is multi-arch with:
 ```bash
-docker buildx imagetools inspect ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:dev
+docker buildx imagetools inspect ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:test
 # should list both linux/amd64 and linux/arm64
 ```
 
 ## The deploy ran but my change isn't visible
 
-- **Right gateway?** `local` = :8088 (your authoring gateway, file-based), `dev` = :8089, `prod` = :8090.
+- **Right gateway?** `local` = :8088 (your authoring gateway, file-based), `test` = :8089, `production` = :8090.
 - **Which image is it running?**
   ```bash
-  docker inspect -f '{{.Config.Image}}' lab05-ignition-dev
+  docker inspect -f '{{.Config.Image}}' lab05-ignition-test
   ```
   If it still shows `inductiveautomation/ignition:8.3.6`, the deploy didn't recreate it — the
-  `IGNITION_DEV_IMAGE` override wasn't set. Re-run the deploy, or locally:
-  `scripts/deploy-image.sh dev <image>`.
-- **Stale moving tag.** If you deployed `:dev` by name and it didn't change, remember moving tags can
+  `IGNITION_TEST_IMAGE` override wasn't set. Re-run the deploy, or locally:
+  `scripts/deploy-image.sh test <image>`.
+- **Stale moving tag.** If you deployed `:test` by name and it didn't change, remember moving tags can
   point at an old digest on a host that already cached them. Deploy the immutable `:sha-<short>` tag.
 
-## dev/prod stuck on the base image (empty gateway)
+## test/production stuck on the base image (empty gateway)
 
-That's the **default** until the first deploy — `IGNITION_DEV_IMAGE` / `IGNITION_PROD_IMAGE` are unset,
+That's the **default** until the first deploy — `IGNITION_TEST_IMAGE` / `IGNITION_PRODUCTION_IMAGE` are unset,
 so compose falls back to the base Ignition image. Run `deploy.yml` (push to `main`) / `release.yml`
-(tag on `main`), or locally `scripts/build-image.sh && scripts/deploy-image.sh dev cicd-lab-05-ignition:local`.
+(tag on `main`), or locally `scripts/build-image.sh && scripts/deploy-image.sh test cicd-lab-05-ignition:local`.
 
 ## The workflow finished but nothing deployed
 
@@ -141,8 +141,8 @@ printed, and point the gateway at it yourself:
 
 ```bash
 docker pull ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:sha-<short>
-IGNITION_DEV_IMAGE=ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:sha-<short> \
-  docker compose up -d ignition-dev
+IGNITION_TEST_IMAGE=ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:sha-<short> \
+  docker compose up -d ignition-test
 ```
 
 ## A duplicate stack appears when running compose

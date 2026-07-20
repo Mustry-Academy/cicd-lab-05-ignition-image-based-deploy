@@ -81,7 +81,7 @@
                   }
                 },
                 "meta": {
-                  "name": "navOverview"
+                  "name": "NavOverview"
                 },
                 "position": {
                   "basis": "140px"
@@ -115,7 +115,7 @@
                   }
                 },
                 "meta": {
-                  "name": "navRefrigeration"
+                  "name": "NavRefrigeration"
                 },
                 "position": {
                   "basis": "160px"

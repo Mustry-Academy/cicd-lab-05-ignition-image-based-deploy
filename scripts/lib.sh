@@ -2,6 +2,10 @@
 # Shared helpers for setup.sh / trigger-scan.sh / teardown.sh.
 # Sourced, not executed: . "$(dirname "$0")/lib.sh"
 
+# Colors and shared constants below are consumed by the scripts that source
+# this file, so shellcheck cannot see their use from here.
+# shellcheck disable=SC2034
+
 # Guard against direct execution.
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
   echo "scripts/lib.sh is meant to be sourced, not executed." >&2
@@ -30,14 +34,14 @@ fi
 
 # Names of the three gateways the lab ships with. Used for iteration in
 # setup.sh and validation in trigger-scan.sh.
-LAB_GATEWAYS=(local dev prod)
+LAB_GATEWAYS=(local test production)
 
 # Map a gateway name → its host-facing URL.
 gateway_url() {
   case "${1:-local}" in
     local) printf 'http://localhost:8088' ;;
-    dev)   printf 'http://localhost:8089' ;;
-    prod)  printf 'http://localhost:8090' ;;
+    test)   printf 'http://localhost:8089' ;;
+    production)  printf 'http://localhost:8090' ;;
     *)     return 1 ;;
   esac
 }
@@ -48,8 +52,8 @@ gateway_url() {
 gateway_container() {
   case "${1:-local}" in
     local) printf 'lab05-ignition-local' ;;
-    dev)   printf 'lab05-ignition-dev' ;;
-    prod)  printf 'lab05-ignition-prod' ;;
+    test)   printf 'lab05-ignition-test' ;;
+    production)  printf 'lab05-ignition-production' ;;
     *)     return 1 ;;
   esac
 }
@@ -59,8 +63,8 @@ gateway_container() {
 gateway_service() {
   case "${1:-local}" in
     local) printf 'ignition-local' ;;
-    dev)   printf 'ignition-dev' ;;
-    prod)  printf 'ignition-prod' ;;
+    test)   printf 'ignition-test' ;;
+    production)  printf 'ignition-production' ;;
     *)     return 1 ;;
   esac
 }
@@ -101,7 +105,7 @@ env_value() {
 
 # Populate IGNITION_API_KEY from .env. Precedence (first non-empty wins):
 #   1. IGNITION_API_KEY already set in the environment (CI sets this)
-#   2. IGNITION_API_KEY_<GATEWAY> from .env (when $1 is local|dev|prod)
+#   2. IGNITION_API_KEY_<GATEWAY> from .env (when $1 is local|test|production)
 #   3. IGNITION_API_KEY from .env (legacy single-key shape)
 load_api_key_from_env() {
   if [ -n "${IGNITION_API_KEY:-}" ]; then
@@ -112,8 +116,8 @@ load_api_key_from_env() {
     local per_gw
     case "$gateway" in
       local) per_gw="$(env_value IGNITION_API_KEY_LOCAL)" ;;
-      dev)   per_gw="$(env_value IGNITION_API_KEY_DEV)" ;;
-      prod)  per_gw="$(env_value IGNITION_API_KEY_PROD)" ;;
+      test)   per_gw="$(env_value IGNITION_API_KEY_TEST)" ;;
+      production)  per_gw="$(env_value IGNITION_API_KEY_PRODUCTION)" ;;
     esac
     if [ -n "${per_gw:-}" ]; then
       IGNITION_API_KEY="$per_gw"

@@ -14,7 +14,7 @@ Reference reading for part 2 of the lab. The complete pattern in five steps, bui
 ```
 
 1. **Build** the image from the `Dockerfile`, baking projects/config/modules into layers.
-2. **Tag** it `:sha-<short>` (immutable) and a moving pointer (`:dev` or `:prod`).
+2. **Tag** it `:sha-<short>` (immutable) and a moving pointer (`:test` or `:production`).
 3. **Push** to the registry (GHCR).
 4. **Pull** the image on the machine that owns the target gateway.
 5. **Run** — `docker compose up -d ignition-<env>` recreates the container from the new image.
@@ -28,21 +28,21 @@ In this lab **steps 4 and 5 are yours to type.** CI does 1–3 and prints the ta
 The single most important idea in image-based release:
 
 ```
-push to main ──▶ build ──▶ :sha-abc1234 + :dev ──▶ deploy to dev  (test it here)
+push to main ──▶ build ──▶ :sha-abc1234 + :test ──▶ deploy to test  (test it here)
                                        │
-tag v0.1.0 (on main) ─▶ promote ───────┘ re-tag :dev ──▶ :v0.1.0 + :prod ──▶ deploy to prod
+tag v0.1.0 (on main) ─▶ promote ───────┘ re-tag :test ──▶ :v0.1.0 + :production ──▶ deploy to production
                         (no rebuild — same digest)
 ```
 
-`release.yml` does **not** rebuild on a tag. It runs `docker buildx imagetools create` to copy the manifest of the already-tested **`:dev`** image (the one dev is running) onto new tags (`:v0.1.0`, `:prod`). Server-side, no layers moved. (Why `:dev` and not a rebuild from the tagged commit? A rebuild could pull a newer base layer and ship bytes dev never ran — we promote *what dev validated*.) Prove it:
+`release.yml` does **not** rebuild on a tag. It runs `docker buildx imagetools create` to copy the manifest of the already-tested **`:test`** image (the one test is running) onto new tags (`:v0.1.0`, `:production`). Server-side, no layers moved. (Why `:test` and not a rebuild from the tagged commit? A rebuild could pull a newer base layer and ship bytes test never ran — we promote *what test validated*.) Prove it:
 
 ```bash
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-dev
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-prod
-# the sha256:… digests are identical — prod runs the bytes dev tested
+docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-test
+docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-production
+# the sha256:… digests are identical — production runs the bytes the test gateway tested
 ```
 
-If you rebuilt for prod instead, a base-image update, a dependency, or a clock-dependent layer could differ — and you'd be shipping something dev never saw.
+If you rebuilt for production instead, a base-image update, a dependency, or a clock-dependent layer could differ — and you'd be shipping something test never saw.
 
 ## Build is portable; deploy is not
 
@@ -75,14 +75,14 @@ That's why this lab needs no runner at all: with the build off-box, what's left 
 | Artifact you can audit | None (just git) | A versioned, labelled image with a digest |
 | Best for | Active development, frequent project edits | Releases, module/baseline changes, immutable infra |
 
-Most mature Ignition shops use **both**: file-based for the daily inner loop on a working gateway, image-based for promoting releases through dev → prod. This lab keeps `local` file-based (authoring) and makes dev/prod image-based (releases) so you live in both worlds at once.
+Most mature Ignition shops use **both**: file-based for the daily inner loop on a working gateway, image-based for promoting releases through test → production. This lab keeps `local` file-based (authoring) and makes test/production image-based (releases) so you live in both worlds at once.
 
 ## Rollback
 
 Three patterns, increasing maturity — image-based makes the strong ones cheap:
 
 1. **`git revert` + re-merge.** Triggers a fresh build/deploy of the reverted state. Works, but rebuilds.
-2. **Re-promote a known-good tag.** `release.yml`'s `workflow_dispatch` takes a `tag` input: point prod at `v0.1.0`'s *existing* image in two clicks. No rebuild, no git surgery. This is the canonical image-based rollback.
+2. **Re-promote a known-good tag.** `release.yml`'s `workflow_dispatch` takes a `tag` input: point production at `v0.1.0`'s *existing* image in two clicks. No rebuild, no git surgery. This is the canonical image-based rollback.
 3. **Keep N versions warm.** Because every release is an immutable tag in the registry, "roll back" is always available for any version you haven't deleted. Retention/cleanup of old tags becomes the real question (out of scope here).
 
 ## What lives where (and what's safe to throw away)
@@ -94,7 +94,7 @@ Image-based deploy recreates the container on every deploy, so be clear about wh
 | Project content, config, module manifest + binaries | Historian data → TimescaleDB |
 | The gateway's commissioned internal DB (re-created each boot) | Anything you deliberately put on an external volume or DB |
 
-In this lab, dev/prod have **no persistent data volume** — that's intentional, and safe *only because* the durable data (historian) is in Timescale. In a real deployment you'd decide carefully what (if anything) needs a volume: gateway audit logs, alarm journal, named user accounts. Each is a "does this belong in the image, a volume, or a database?" decision.
+In this lab, test/production have **no persistent data volume** — that's intentional, and safe *only because* the durable data (historian) is in Timescale. In a real deployment you'd decide carefully what (if anything) needs a volume: gateway audit logs, alarm journal, named user accounts. Each is a "does this belong in the image, a volume, or a database?" decision.
 
 ## When NOT to do image-based
 

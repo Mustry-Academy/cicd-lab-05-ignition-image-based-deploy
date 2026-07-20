@@ -4,15 +4,15 @@
 #   ignition-local   http://localhost:8088   bind-mounts ./projects + ./services/config
 #                                            (working gateway — you AUTHOR here,
 #                                             file-based, exactly like Lab 04)
-#   ignition-dev     http://localhost:8089   runs the IMAGE built by deploy.yml
+#   ignition-test     http://localhost:8089   runs the IMAGE built by deploy.yml
 #                                            (push to main → build → recreate)
-#   ignition-prod    http://localhost:8090   runs the IMAGE promoted by release.yml
+#   ignition-production    http://localhost:8090   runs the IMAGE promoted by release.yml
 #                                            (tag push v* → re-tag → recreate)
 #
-#   timescaledb      localhost:5432          databases: ignition_loc, ignition_dev,
-#                                                       ignition_prd (one per env)
+#   timescaledb      localhost:5432          databases: ignition_local_development, ignition_test,
+#                                                       ignition_production (one per env)
 #
-# The shift from Lab 04: dev/prod no longer take a `docker cp` of files + a hot
+# The shift from Lab 04: test/production no longer take a `docker cp` of files + a hot
 # scan. They run a versioned image whose layers ALREADY contain the project,
 # config, and modules. Deploy = pull the image and recreate the container.
 #
@@ -26,8 +26,8 @@ name: cicd-lab05
 #   scripts/setup.sh           # or:  docker compose up -d
 # Then:
 #   open http://localhost:8088   (local — your authoring gateway)
-#   open http://localhost:8089   (dev — base image until the first deploy.yml run)
-#   open http://localhost:8090   (prod — base image until the first release.yml run)
+#   open http://localhost:8089   (test — base image until the first deploy.yml run)
+#   open http://localhost:8090   (production — base image until the first release.yml run)
 
 # YAML anchors for the bits that don't differ across the three gateways. Each
 # service merges these in and overrides the parts that do (ports, admin creds,
@@ -93,7 +93,7 @@ services:
   # --- local gateway: your authoring loop -------------------------------------
   # Identical model to Lab 04: the base Ignition image plus bind mounts, so edits
   # on the host show up immediately. This is where you DEVELOP (file-based); the
-  # image you ship to dev/prod is built from these same files.
+  # image you ship to test/production is built from these same files.
   ignition-local:
     image: inductiveautomation/ignition:8.3.6
     container_name: lab05-ignition-local
@@ -130,7 +130,7 @@ services:
       wrapper.java.initmemory=256
       -Dignition.allowunsignedmodules=true
       -Dignition.gateway.externalModulesFolder=/third-party-modules
-      -Dignition.config.mode=loc
+      -Dignition.config.mode=local-development
     healthcheck: *ignition-healthcheck
     <<: *ignition-resources
     networks:
@@ -139,17 +139,17 @@ services:
       timescaledb:
         condition: service_healthy
 
-  # --- dev gateway: runs the built IMAGE -------------------------------------
+  # --- test gateway: runs the built IMAGE -------------------------------------
   # No bind mounts and no persistent data volume: the container filesystem IS the
   # deployable artifact. Project content, config, and modules all come from the
-  # image's layers. deploy.yml sets IGNITION_DEV_IMAGE to the freshly built tag
-  # and runs `docker compose up -d ignition-dev` to recreate this container.
+  # image's layers. deploy.yml sets IGNITION_TEST_IMAGE to the freshly built tag
+  # and runs `docker compose up -d ignition-test` to recreate this container.
   # Before the first build, it falls back to the base image so the stack still
-  # comes up (an empty gateway, just like Lab 04's dev started empty).
-  ignition-dev:
-    image: "${IGNITION_DEV_IMAGE:-inductiveautomation/ignition:8.3.6}"
-    container_name: lab05-ignition-dev
-    hostname: lab05-ignition-dev
+  # comes up (an empty gateway, just like Lab 04's test started empty).
+  ignition-test:
+    image: "${IGNITION_TEST_IMAGE:-inductiveautomation/ignition:8.3.6}"
+    container_name: lab05-ignition-test
+    hostname: lab05-ignition-test
     # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
     # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
     # the gateway fails to boot ("gateway.xml exists, but isnt readable or
@@ -167,16 +167,16 @@ services:
       - "8061:8060"
     environment:
       <<: *ignition-env
-      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_DEV:-admin}"
-      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_DEV:-password}"
+      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_TEST:-admin}"
+      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_TEST:-password}"
     command: >
-      -n lab05-dev
+      -n lab05-test
       -m 1024
       --
       wrapper.java.initmemory=256
       -Dignition.allowunsignedmodules=true
       -Dignition.gateway.externalModulesFolder=/third-party-modules
-      -Dignition.config.mode=dev
+      -Dignition.config.mode=test
     healthcheck: *ignition-healthcheck
     <<: *ignition-resources
     networks:
@@ -185,13 +185,13 @@ services:
       timescaledb:
         condition: service_healthy
 
-  # --- prod gateway: runs the PROMOTED image ---------------------------------
-  # Same shape as dev. release.yml sets IGNITION_PROD_IMAGE to the image that was
-  # already tested in dev (re-tagged, NOT rebuilt) and recreates this container.
-  ignition-prod:
-    image: "${IGNITION_PROD_IMAGE:-inductiveautomation/ignition:8.3.6}"
-    container_name: lab05-ignition-prod
-    hostname: lab05-ignition-prod
+  # --- production gateway: runs the PROMOTED image ---------------------------------
+  # Same shape as test. release.yml sets IGNITION_PRODUCTION_IMAGE to the image that was
+  # already tested on the test gateway (re-tagged, NOT rebuilt) and recreates this container.
+  ignition-production:
+    image: "${IGNITION_PRODUCTION_IMAGE:-inductiveautomation/ignition:8.3.6}"
+    container_name: lab05-ignition-production
+    hostname: lab05-ignition-production
     # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
     # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
     # the gateway fails to boot ("gateway.xml exists, but isnt readable or
@@ -209,16 +209,16 @@ services:
       - "8062:8060"
     environment:
       <<: *ignition-env
-      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_PROD:-admin}"
-      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_PROD:-password}"
+      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_PRODUCTION:-admin}"
+      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_PRODUCTION:-password}"
     command: >
-      -n lab05-prod
+      -n lab05-production
       -m 1024
       --
       wrapper.java.initmemory=256
       -Dignition.allowunsignedmodules=true
       -Dignition.gateway.externalModulesFolder=/third-party-modules
-      -Dignition.config.mode=prd
+      -Dignition.config.mode=production
     healthcheck: *ignition-healthcheck
     <<: *ignition-resources
     networks:
@@ -231,7 +231,7 @@ services:
   # POSTGRES_DB is the database created automatically at first init. The init
   # script under ./db-init/ (mounted below) creates the other two so each
   # gateway can point at its own database. Historian data lives HERE, not in the
-  # gateway image — which is exactly why throwing away the dev/prod container on
+  # gateway image — which is exactly why throwing away the test/production container on
   # each deploy is safe: the data that matters is in Timescale.
   timescaledb:
     image: timescale/timescaledb:latest-pg16
@@ -250,7 +250,7 @@ services:
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-ignition}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-ignition}"
-      POSTGRES_DB: ignition_loc
+      POSTGRES_DB: ignition_local_development
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ignition}"]
       interval: 5s
