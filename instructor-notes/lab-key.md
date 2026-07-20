@@ -68,48 +68,52 @@ The image exists locally. Part 2 deploys it by recreating the container; the rep
 
 ## What success looks like
 
+This lab runs **entirely locally — no self-hosted runner, no fork, no GitHub account required.** Builds are local (`scripts/build-image.sh`) and deploys are manual (`IGNITION_DEV_IMAGE=<tag> docker compose up -d ignition-dev`). The CI workflows exist and build/promote images, but they deliberately have **no deploy job**: the last mile is the student's to type. Only the optional stretch touches GitHub at all.
+
 By the end of part 2, the participant has:
 
-1. The bundled `github-runner` online in their fork (`self-hosted, lab05`).
-2. Two GitHub environments (`lab-gateway-dev`, `lab-gateway-prod`) — typically with **no** secrets/variables (GHCR auth is `GITHUB_TOKEN`; `IGNITION_URL` defaults are fine).
-3. Merged a PR **into `main`** → watched `deploy.yml`'s `build` (hosted) push to GHCR and `deploy` (self-hosted) recreate dev. Change live on :8089.
-4. Pushed a `v*` tag on `main` → watched `release.yml` promote `:dev` (no rebuild) and recreate prod. Change live on :8090.
-5. **Proved dev and prod run the same image digest** after a release.
-6. Rolled prod back to an earlier tag via `workflow_dispatch`.
+1. Deployed **their own built image** to dev (:8089), proven with `docker inspect -f '{{.Config.Image}}'`.
+2. Shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on dev.
+3. **Two immutable `:sha` tags** in their local image store, one per build, each traceable to its commit.
+4. **Rolled dev back** to the older tag by re-running the same command with the older name, and verified the old view is live.
+5. Confirmed historian data in TimescaleDB survived every deploy — and can say why (it was never in the container).
+6. Can name the two steps a production pipeline adds between build and run (**push + pull**), and why we skipped them today.
 
-If #5 is missing, push them to do it — it's the conceptual centerpiece. #6 is the second-most important.
+If #4 is missing, push them to do it — rollback-as-a-rename is the conceptual centerpiece. #6 is the second-most important: it's the bridge to the stretch and to Lab 06.
 
 ## The five-step pattern, walked through
 
 Use on the board if they need a re-walk:
 
-1. **Build** — `docker build` bakes projects/config/modules (hosted runner).
+1. **Build** — `docker build` bakes projects/config/modules.
 2. **Tag** — `:sha-<short>` (immutable) + `:dev` (moving).
-3. **Push** — to GHCR with `GITHUB_TOKEN`.
-4. **Pull** — the self-hosted runner pulls the immutable `:sha-<short>`.
+3. **Push** — to a registry (GHCR, with `GITHUB_TOKEN`).
+4. **Pull** — on the machine that owns the target gateway.
 5. **Run** — `docker compose up -d ignition-dev` recreates the container from it.
+
+**Today they do 1, 2, and 5 — steps 3 and 4 are skipped entirely** because the image never leaves the laptop. Say that out loud: it's why deploy is a one-liner here. In the stretch, CI does 1–3 and they do 4–5 by hand. In Lab 06/07 a runner does 4–5 for them.
 
 Contrast explicitly with Lab 04's checkout → prune → ship → scan → verify. The artifact changed (files → image) and the gateway lifecycle changed (mutate-in-place → replace).
 
-## The two-job structure, annotated
+## The workflow structure, annotated
+
+`deploy.yml` is **build-only** — one job, no deploy:
 
 ```yaml
 jobs:
   build:                    # runs-on: ubuntu-latest  (FREE, portable)
     permissions: { packages: write }   # GHCR push via GITHUB_TOKEN
-    outputs: { image: <base>:sha-<short> }
     # login → buildx → build-push-action (push: true) → cache to gha
-  deploy:                   # needs: build
-    runs-on: [self-hosted, lab05]      # owns the gateway container
-    environment: lab-gateway-dev       # history + optional gates
-    # login → docker pull <image> → docker compose up -d ignition-dev → smoke-check
+    # → final step prints the image ref to $GITHUB_STEP_SUMMARY
+  # (no deploy job — the last mile is manual in this lab)
 ```
 
 Things to highlight in the grade:
 
-- **The build/deploy split.** The single biggest operational difference from Lab 04. Build minutes are free and off the privileged runner; only the last-mile recreate needs `self-hosted`. A participant who can explain *why* you'd want that split (cost, blast radius, the runner does less) gets the lesson.
-- **`needs: build` + the `image` output.** The deploy job consumes the exact tag the build produced. Deploying the immutable `:sha-…` (not `:dev`) is deliberate — moving tags drift.
-- **`permissions: packages: write`.** Least privilege for the registry, no PAT. The deploy job only needs read (included in write).
+- **The build/deploy split.** The single biggest operational difference from Lab 04. The build no longer has to happen next to the gateway, so it moves to free hosted minutes; only the last-mile recreate needs a privileged machine. A participant who can explain *why* you'd want that split (cost, blast radius, the privileged box does less) gets the lesson.
+- **Why there's no deploy job here.** Ask them: *what would that job need that a hosted runner can't have?* Answer: access to the Docker daemon running the gateway. That's the whole reason self-hosted runners exist, and it's what Lab 06/07 set up. Having typed the pull+recreate by hand, they know exactly what that runner would be doing.
+- **Deploy the immutable `:sha-…`, not `:dev`.** Moving tags drift; the `:sha` is the rollback point. Part 2.3 depends on them having written one down.
+- **`permissions: packages: write`.** Least privilege for the registry, no PAT.
 - **`concurrency` + `cancel-in-progress: false`.** Don't cancel a deploy mid-recreate; queue the next one.
 - **`environment:`.** Even empty, it buys per-stage deploy history and the place to bolt on required reviewers for prod.
 
@@ -140,14 +144,16 @@ Have them compare to Lab 04, where rolling prod back meant re-copying old files 
 
 ## Common stumbles
 
-- **#1 by far — nothing happens after merge.** Forks ship with **Actions disabled**; the participant never enabled them (Actions tab → "I understand my workflows…"). No CI, no build, no push. Check this first whenever "the workflow didn't run." Worth saying up front in Part 2.1.
+> Most of the GitHub-related stumbles below only apply to the **optional stretch** — the core lab never leaves the laptop.
+
+- **"The workflow finished but nothing deployed."** Expected, and worth pre-empting: there is no deploy job. CI builds and prints a tag; deploying it is manual. If someone waits for dev to change on its own, they'll wait forever.
+- **#1 by far (stretch) — nothing happens after merge.** Forks ship with **Actions disabled**; the participant never enabled them (Actions tab → "I understand my workflows…"). No CI, no build, no push. Check this first whenever "the workflow didn't run."
 - **"Can I even push? It's your registry."** Reassure: the build publishes to *their own* `ghcr.io/<their-fork-owner>/…` (the workflow derives the namespace from `github.repository_owner`), never to Mustry's. Nothing in the lab pushes to a registry they don't own. Good moment to show them the package appearing under *their* fork → Packages.
 - **403 pushing, org-owned fork.** If their fork is under a GitHub org, *Settings → Actions → General → Workflow permissions* must be **read and write**, and org Packages must be enabled. Personal forks are fine by default. (Plain `permissions: packages: write` is already in the workflow.)
-- **401 pulling on the deploy job.** No `docker login ghcr.io` before `docker pull`. The package is private by default; the runner must authenticate.
+- **401 pulling the CI-built image (stretch).** GHCR packages are private by default, so pulling one by hand needs a one-off `docker login ghcr.io` (username = GitHub user, password = a token with `read:packages`). Or flip the package public in its settings.
 - **`manifest unknown` on release.** No `:dev` image exists yet — they tagged a release before ever shipping anything to dev. Fix: push to `main` so `deploy.yml` publishes `:dev`, then tag. (On a rollback dispatch, it means that version was never released.) See TROUBLESHOOTING.
-- **Duplicate stack from the runner.** Compose project name mismatch — confirm the `name:` field is set in `docker-compose.yaml`. Without it, the runner's checkout dir name becomes the project and it spins up a parallel set.
-- **"Deploy ran but dev didn't change."** They deployed `:dev` (moving) and the host had an old digest cached, or `IGNITION_DEV_IMAGE` wasn't set. Inspect `{{.Config.Image}}` on the container.
-- **`Context access might be invalid` / environment warnings in the IDE.** Cosmetic — the Actions VS Code extension can't verify environments/vars that don't exist on GitHub yet. Gone once the environments are created.
+- **Duplicate stack appears.** Compose project name mismatch — confirm the `name: cicd-lab05` field is set at the top of `docker-compose.yaml`. Without it, the directory name becomes the project and compose spins up a parallel set.
+- **"I deployed but dev didn't change."** Either `IGNITION_DEV_IMAGE` wasn't actually set on the command (a common shell-quoting slip), or they deployed `:dev`/`:local` (moving) and Docker reused a cached digest. Inspect `{{.Config.Image}}` on the container — that settles it in one command.
 - **Expecting a hot reload.** Someone edits a view and expects dev to update without a deploy. That's the *local* gateway's job (file-based). Dev/prod only change when an image is deployed. This confusion is worth surfacing — it's exactly the file-vs-image boundary.
 
 ## Debrief talking points
@@ -155,9 +161,7 @@ Have them compare to Lab 04, where rolling prod back meant re-copying old files 
 - **Immutable vs moving tags.** Deploy `:sha-<short>`, navigate with `:dev`/`:prod`. A participant who'd `docker compose up` with `:dev` pinned in prod has a footgun — moving tags drift under you.
 - **Atomicity.** Image recreate keeps the old container until the new one is ready, then swaps. Lab 04's `rm -rf` + `docker cp` had a partial-state window. Image-based deletes that failure mode.
 - **What persists.** Historian → Timescale (survives). Everything in the image dies and is reborn each deploy. Push them to place user accounts / audit logs / alarm journal in that mental model — each is a "image vs volume vs database" decision in a real deployment.
-- **Socket = lab-grade.** The runner has the Docker socket. In production you wouldn't hand that out; you'd use a pull-based agent on the gateway host or an orchestrator. Good segue to the multi-gateway lab.
+- **Who is allowed to touch the gateway?** Today it was them, by hand. Automating that means giving some machine the Docker socket — and in production you wouldn't hand that out casually; you'd use a pull-based agent on the gateway host or an orchestrator. Good segue to Lab 06/07 and the multi-gateway story.
 
 ## Wrap-up — set up the next day
-
-- Stop the runner if they're pausing (`docker compose stop github-runner`); the PAT stays in `.env`.
 - Foreshadow multi-gateway: "You promoted one image to one prod gateway. Next: the same image to *many* gateways, and how you coordinate that fan-out."

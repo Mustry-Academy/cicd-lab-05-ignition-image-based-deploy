@@ -2,8 +2,9 @@
 # deploy-image.sh — the LOCAL mirror of the CI deploy step.
 #
 # Recreates a gateway container from a given image tag and waits for it to come
-# back healthy. This is the "pull → run" half of the image-based pattern; the
-# CI `deploy` job does the same thing on the self-hosted runner.
+# back healthy. This is the "pull → run" half of the image-based pattern — the
+# half that has to happen next to the gateway, which is why this lab has you run
+# it by hand instead of from CI.
 #
 # How it works: docker-compose.yaml reads IGNITION_DEV_IMAGE / IGNITION_PROD_IMAGE
 # to decide which image the dev/prod gateway runs. This script sets that variable

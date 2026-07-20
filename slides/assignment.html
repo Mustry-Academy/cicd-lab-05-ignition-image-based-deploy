@@ -240,9 +240,9 @@ body{
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx">Go to your lab parent folder <span class="inlinecode">~/mustry-academy/</span> — all the lab repos live side by side, one folder per lab. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. No need to enable Actions today — nothing in the assignment triggers a workflow.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins and the pre-provisioned <span class="inlinecode">cicd</span> API key work as shipped on all three gateways. The <span class="inlinecode">RUNNER_*</span> vars only matter for the optional CI path.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins and the pre-provisioned <span class="inlinecode">cicd</span> API key work as shipped on all three gateways. No PAT, no fork, no GitHub account needed today.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>. Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>dev</b> (:8089) and <b>prod</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. The <span class="inlinecode">lab05-runner</span> container will restart-loop on the placeholder PAT — that's expected; <b>ignore it for the core lab</b> (only the optional CI stretch needs it, and there you'd paste your Lab 04 PAT into <span class="inlinecode">RUNNER_GITHUB_PAT</span>).</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>dev</b> (:8089) and <b>prod</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. Four containers, no runner: today <b>you</b> are the last mile of the pipeline.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: the parent folder, all labs side by side</span>
@@ -262,7 +262,7 @@ git remote -v
 
 <span class="cm"># 5: open VS Code, then bring the stack up</span>
 code .
-scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB + runner</span></pre></div>
+scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB</span></pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Why fork at all?</span>
           <p>Consistency and ownership. Your fork is <b>your</b> copy of the whole course: every lab you forked stays in your account after the masterclass, and if you later flip on the CI legs, the workflows push images to <b>your own</b> GHCR namespace — no extra setup.</p>
@@ -333,7 +333,7 @@ rm third-party-modules/dummy.txt</pre></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># step 1: the self-contained proof</span>
-docker run --rm <span class="cmd2">--user root</span> -p 9088:8088 \
+docker run --rm -p 9088:8088 \
   -e ACCEPT_IGNITION_EULA=Y -e IGNITION_EDITION=standard \
   -e GATEWAY_ADMIN_USERNAME=admin \
   -e GATEWAY_ADMIN_PASSWORD=password \
@@ -382,8 +382,8 @@ du -sh .git</pre></div>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>So today, you are the pipeline.</b> Every command in Parts 2.1 to 2.3 is a line the workflow would run. Type them once by hand and the automation never feels like magic again.</span></li>
       </ul>
       <div>
-        <div class="code"><pre><span class="cm"># what deploy.yml's deploy job would run
-# (on the runner that owns the gateway):</span>
+        <div class="code"><pre><span class="cm"># what a deploy job would run
+# (on a machine that owns the gateway):</span>
 docker pull ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt;
 IGNITION_DEV_IMAGE=ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt; \
   docker compose up -d ignition-dev
@@ -557,22 +557,23 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-dev</pre></div>
     <div class="stage">Stretch · optional</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Run the real pipeline through GitHub Actions</div><div class="lead">Everything you typed in part 2 is automated in this repo's workflows — GitHub flow: <b>merge to <span class="inlinecode">main</span> → dev</b>, <b>tag → prod</b>. Needs your fork + the bundled runner; also a great take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
+    <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Let GitHub build the image, then deploy it by hand</div><div class="lead">In part 2 you built locally and deployed by hand. This moves the <b>build</b> half to CI — merge to <span class="inlinecode">main</span> builds and pushes, a <span class="inlinecode">v*</span> tag promotes. The deploy half stays yours. Needs your fork; a good take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx"><b>One-time setup:</b> in <span class="inlinecode">.env</span>, point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b> and paste your <b>Lab 04 <span class="inlinecode">repo</span>-scope PAT</b> into <span class="inlinecode">RUNNER_GITHUB_PAT</span>, then start the runner. It appears under your fork's <i>Settings → Actions → Runners</i>.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx"><b>Ship to dev via CI:</b> open a PR with a small project change and watch <span class="inlinecode">ci.yml</span> validate it (including a no-push image build). Merge to <span class="inlinecode">main</span> → <span class="inlinecode">deploy.yml</span> builds on a free hosted runner, pushes to <b>your</b> GHCR, and your runner recreates dev (:8089).</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to prod:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:dev</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:prod</span> — <b>no rebuild</b> — and recreates prod (:8090).</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx"><b>The payoff:</b> prove dev and prod run the <b>same digest</b>. Then roll prod back with one click: <i>Actions → Release → Run workflow</i>, entering an earlier version.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx"><b>Build via CI:</b> open a PR with a small project change and watch <span class="inlinecode">ci.yml</span> validate it (including a no-push image build). Merge to <span class="inlinecode">main</span> → <span class="inlinecode">deploy.yml</span> builds on a free hosted runner and pushes to <b>your</b> GHCR namespace.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Deploy it yourself:</b> open the run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point dev at it. Same two commands as part 2; only the image name got longer.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to prod:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:dev</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:prod</span> — <b>no rebuild</b>. Deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PROD_IMAGE</span>.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><b>Notice what stayed manual:</b> you typed an image name twice. That last mile — a machine next to the gateway, picking the tag up on its own — is exactly what Labs 06 and 07 automate.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: register the bundled runner against YOUR fork
-#    .env → RUNNER_REPO_URL + RUNNER_GITHUB_PAT</span>
-docker compose up -d github-runner
+        <div class="code"><pre><span class="cm"># 1: PR → merge to main → watch Actions build</span>
 
-<span class="cm"># 2: ship — PR → merge to main → watch Actions</span>
+<span class="cm"># 2: copy the tag from the run summary, deploy it</span>
+docker pull ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt;
+IGNITION_DEV_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt; \
+  docker compose up -d ignition-dev
 
-<span class="cm"># 3: release</span>
+<span class="cm"># 3: release (promote, no rebuild)</span>
 git tag v0.1.0 &amp;&amp; git push origin v0.1.0
 
 <span class="cm"># 4: the digest-equality proof</span>
@@ -588,7 +589,7 @@ docker inspect -f '{{ index .RepoDigests 0 }}' \
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch · fork + runner required</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch · fork required</span></div>
 </section>
 
 <!-- 14 · DONE -->

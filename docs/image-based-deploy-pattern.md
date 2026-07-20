@@ -8,7 +8,7 @@ Reference reading for part 2 of the lab. The complete pattern in five steps, bui
 ┌──────────┐    ┌────────┐    ┌─────────┐    ┌────────┐    ┌─────────────┐
 │ 1. Build │ →  │ 2. Tag │ →  │ 3. Push │ →  │ 4. Pull│ →  │ 5. Run      │
 │  image   │    │ :sha + │    │ to GHCR │    │ on the │    │ (recreate   │
-│ from     │    │ moving │    │         │    │ runner │    │  container) │
+│ from     │    │ moving │    │         │    │ target │    │  container) │
 │ Dockerfile│   │ tag    │    │         │    │        │    │             │
 └──────────┘    └────────┘    └─────────┘    └────────┘    └─────────────┘
 ```
@@ -16,10 +16,12 @@ Reference reading for part 2 of the lab. The complete pattern in five steps, bui
 1. **Build** the image from the `Dockerfile`, baking projects/config/modules into layers.
 2. **Tag** it `:sha-<short>` (immutable) and a moving pointer (`:dev` or `:prod`).
 3. **Push** to the registry (GHCR).
-4. **Pull** the image on the runner that owns the target gateway.
+4. **Pull** the image on the machine that owns the target gateway.
 5. **Run** — `docker compose up -d ignition-<env>` recreates the container from the new image.
 
 Then verify health. No SSH of files, no scan API — the image already contains the state; you replace the whole container.
+
+In this lab **steps 4 and 5 are yours to type.** CI does 1–3 and prints the tag; you pull it and point the gateway at it. Steps 4–5 are exactly what a self-hosted runner would do on your behalf, which is what Labs 06 and 07 set up.
 
 ## Build-once, promote-many
 
@@ -47,16 +49,18 @@ If you rebuilt for prod instead, a base-image update, a dependency, or a clock-d
 | Step | Where it runs | Why |
 |---|---|---|
 | build, push | `ubuntu-latest` (GitHub-hosted, free) | Just needs Docker + registry creds. Nothing environment-specific. |
-| pull, recreate | `[self-hosted, lab05]` | Must reach the gateway container's Docker daemon. |
+| pull, recreate | A machine that can reach the gateway's Docker daemon — **in this lab, your laptop, by hand** | Environment-specific and privileged. Cannot run on a shared hosted runner. |
 
-This split is the operational payoff over file-based. In Lab 04 the self-hosted runner did *everything* (it held the working tree and ran `docker cp`). Here it only does the last mile. Build minutes move to the free hosted pool; the privileged runner does less.
+This split is the operational payoff over file-based. In Lab 04 a self-hosted runner did *everything* — it held the working tree and ran `docker cp`. In the image world it would only do the last mile, because the build no longer needs to happen next to the gateway. Build minutes move to the free hosted pool; the privileged machine does less.
+
+That's why this lab needs no runner at all: with the build off-box, what's left is two commands you can run yourself. Doing them by hand shows you precisely how small the privileged half of a deploy actually is.
 
 ## GHCR auth (least privilege)
 
 - **Push** (build/promote jobs): the workflow requests `permissions: packages: write` and logs in with the built-in `GITHUB_TOKEN`. No PAT, no stored registry password.
-- **Pull** (deploy jobs): log in with the same `GITHUB_TOKEN`. Pulling needs only `packages: read`, which `write` includes.
-- **First push** creates the package in your fork's namespace, **private** by default. The runner authenticates, so private is fine. Flip it public in the package settings only if you want anonymous pulls.
-- **Don't** hand the deploy runner a broad PAT "to be safe." The job-scoped `GITHUB_TOKEN` is enough and expires with the run.
+- **Pull** (a deploy job, once you have one): log in with the same `GITHUB_TOKEN`. Pulling needs only `packages: read`, which `write` includes.
+- **First push** creates the package in your fork's namespace, **private** by default. Pulling it by hand therefore needs a one-off `docker login ghcr.io`; flip the package public if you'd rather pull anonymously.
+- **Don't** hand a deploy runner a broad PAT "to be safe." The job-scoped `GITHUB_TOKEN` is enough and expires with the run.
 
 ## File-based vs image-based: when each fits
 
@@ -67,7 +71,7 @@ This split is the operational payoff over file-based. In Lab 04 the self-hosted 
 | Module changes | Can't (scan won't apply) | Trivial — baked in |
 | Atomic rollback | Hard (re-copy old files) | Easy (run the previous tag) |
 | Promotion across envs | Re-copy per env | Re-tag the tested image |
-| Runner privilege | Docker socket / filesystem on every deploy | Socket only for the last-mile recreate; build is off-box |
+| Privilege needed | Docker socket / filesystem on every deploy | Socket only for the last-mile recreate; build is off-box |
 | Artifact you can audit | None (just git) | A versioned, labelled image with a digest |
 | Best for | Active development, frequent project edits | Releases, module/baseline changes, immutable infra |
 

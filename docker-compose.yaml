@@ -16,9 +16,9 @@
 # scan. They run a versioned image whose layers ALREADY contain the project,
 # config, and modules. Deploy = pull the image and recreate the container.
 #
-# `name:` pins the Compose project so the self-hosted runner (which checks the
-# repo out into its own working directory) recreates THESE containers rather than
-# spinning up a parallel set under a different project name.
+# `name:` pins the Compose project so the stack always resolves to THESE
+# containers no matter which directory you run compose from, rather than
+# spinning up a parallel set under a directory-derived project name.
 name: cicd-lab05
 
 # Run it:
@@ -96,7 +96,17 @@ services:
     image: inductiveautomation/ignition:8.3.6
     container_name: lab05-ignition-local
     hostname: lab05-ignition-local
-    user: root
+    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
+    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
+    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
+    # writable"). Instead we ADD the student's group, which -- together with
+    # the group-write + setgid bits scripts/setup.sh applies to the
+    # bind-mounted dirs -- makes everything the gateway writes editable by
+    # the student. No root-owned files, so no sudo.
+    # LAB_GID is exported by scripts/preflight.sh.
+    user: "2003:0"
+    group_add:
+      - "${LAB_GID:-0}"
     restart: unless-stopped
     ports:
       - "8088:8088"
@@ -138,7 +148,17 @@ services:
     image: "${IGNITION_DEV_IMAGE:-inductiveautomation/ignition:8.3.6}"
     container_name: lab05-ignition-dev
     hostname: lab05-ignition-dev
-    user: root
+    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
+    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
+    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
+    # writable"). Instead we ADD the student's group, which -- together with
+    # the group-write + setgid bits scripts/setup.sh applies to the
+    # bind-mounted dirs -- makes everything the gateway writes editable by
+    # the student. No root-owned files, so no sudo.
+    # LAB_GID is exported by scripts/preflight.sh.
+    user: "2003:0"
+    group_add:
+      - "${LAB_GID:-0}"
     restart: unless-stopped
     ports:
       - "8089:8088"
@@ -170,7 +190,17 @@ services:
     image: "${IGNITION_PROD_IMAGE:-inductiveautomation/ignition:8.3.6}"
     container_name: lab05-ignition-prod
     hostname: lab05-ignition-prod
-    user: root
+    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
+    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
+    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
+    # writable"). Instead we ADD the student's group, which -- together with
+    # the group-write + setgid bits scripts/setup.sh applies to the
+    # bind-mounted dirs -- makes everything the gateway writes editable by
+    # the student. No root-owned files, so no sudo.
+    # LAB_GID is exported by scripts/preflight.sh.
+    user: "2003:0"
+    group_add:
+      - "${LAB_GID:-0}"
     restart: unless-stopped
     ports:
       - "8090:8088"
@@ -224,37 +254,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-    networks:
-      - default
-
-  # --- self-hosted GitHub Actions runner -------------------------------------
-  # Auto-registers against the repo set in RUNNER_REPO_URL using a GitHub PAT
-  # (RUNNER_GITHUB_PAT, must have `repo` scope). The runner sits on the lab's
-  # compose network and shares the host's Docker daemon.
-  #
-  # Why /var/run/docker.sock is mounted: the `deploy` job in deploy.yml /
-  # release.yml runs `docker compose up -d ignition-<env>` to recreate the
-  # gateway container from a new image, plus `docker login`/`docker pull` to
-  # fetch that image from GHCR. Both need the host Docker daemon. The image is
-  # BUILT on a GitHub-hosted runner (free, portable) — only the pull-and-recreate
-  # half needs this self-hosted runner. Lab convenience, NOT a production pattern. 
-  github-runner:
-    image: myoung34/github-runner:latest
-    container_name: lab05-runner
-    hostname: lab05-runner
-    restart: unless-stopped
-    environment:
-      REPO_URL: "${RUNNER_REPO_URL}"
-      ACCESS_TOKEN: "${RUNNER_GITHUB_PAT}"
-      RUNNER_NAME: "${RUNNER_NAME:-lab05-runner}"
-      RUNNER_SCOPE: repo
-      LABELS: "self-hosted,lab05"
-      # No EPHEMERAL here on purpose: the image treats ANY non-empty value
-      # (even "false") as "enable --ephemeral". Leave it unset for a
-      # persistent runner.
-      DISABLE_AUTO_UPDATE: "true"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - default
 

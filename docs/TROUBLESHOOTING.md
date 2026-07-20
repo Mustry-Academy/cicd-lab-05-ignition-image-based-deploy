@@ -7,7 +7,7 @@ are one of the first three.
 
 - **Docker isn't running or isn't Compose v2.** `docker compose version` must work (note the space —
   not `docker-compose`). Start Docker Desktop and re-run `scripts/setup.sh` (it's idempotent).
-- **Not enough RAM.** Three gateways at 1 GB each + TimescaleDB + the runner need **≥ 8 GB free**.
+- **Not enough RAM.** Three gateways at 1 GB each + TimescaleDB need **≥ 8 GB free**.
   Raise Docker's memory or bump the per-gateway limit in [`docker-compose.yaml`](../docker-compose.yaml).
 - **Port already in use.** 8088/8089/8090 (gateways) or 5432 (TimescaleDB). Stop the other process or
   change the host port mappings.
@@ -41,11 +41,18 @@ are one of the first three.
 
 ## Gateway FAULTs: "unable to create resource dir … /.resources"
 
-You ran the image with `docker run` but **without `--user root`**. The baked config/project files
-are root-owned, and the gateway needs to create runtime directories under `data/config/` at boot —
-which it can't do as the default non-root user. Add `--user root` (the lab's `docker-compose.yaml`
-sets `user: root` on every gateway for exactly this reason). It's a useful reminder that **file
-ownership is part of what an image carries**. Full working stand-alone command is in
+The baked files are owned by a user the gateway cannot write as. The gateway runs as its own
+`ignition` user (uid 2003) and must create runtime directories under `data/config/` at boot; a
+plain `COPY` in a Dockerfile bakes files as **root**, so that fails.
+
+The fix belongs in the build, not the run: every `COPY` in this lab's `Dockerfile` uses
+`--chown=2003:0`. If you hit this after editing the Dockerfile, check you did not drop a `--chown`.
+It's a useful reminder that **file ownership is part of what an image carries** — get it right at
+build time and the container needs no special privileges at run time.
+
+Do **not** work around it with `--user root`. That reintroduces the problem this course spent Lab 02
+onwards avoiding: a root gateway writes root-owned files into your bind mounts, and you end up
+needing `sudo` to edit your own project files. Full working stand-alone command is in
 [`exercises/lab.md`](../exercises/lab.md) and printed by `scripts/build-image.sh`.
 
 ## Gateway stuck in `RUNNING / COMMISSIONING` (stand-alone run)
@@ -91,9 +98,9 @@ re-tag fails with `manifest unknown`.
 
 ## `no matching manifest for linux/arm64/v8` on pull (Apple Silicon)
 
-The `deploy` step on your self-hosted runner fails with `no matching manifest for linux/arm64/v8`.
+Your `docker pull` of a CI-built image fails with `no matching manifest for linux/arm64/v8`.
 Cause: the **build** ran on GitHub's `ubuntu-latest` (amd64) and produced an **amd64-only** image,
-but your runner is on Apple Silicon (**arm64**), so the pull finds no matching architecture.
+but your laptop is Apple Silicon (**arm64**), so the pull finds no matching architecture.
 
 Fixed by building **multi-arch**: `deploy.yml`'s build job uses `docker/setup-qemu-action` and
 `platforms: linux/amd64,linux/arm64`, so the pushed image runs natively on both. (Cheap here — the
@@ -101,7 +108,7 @@ Dockerfile is COPY-only, so there's nothing to emulate.)
 
 If you still see it: the existing `:dev` image in GHCR is the **old amd64-only** one. Trigger a fresh
 build (push any gateway-content change to `main`) so a multi-arch `:dev` overwrites it, then the
-deploy pulls cleanly. Confirm the published image is multi-arch with:
+pull works cleanly. Confirm the published image is multi-arch with:
 ```bash
 docker buildx imagetools inspect ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:dev
 # should list both linux/amd64 and linux/arm64
@@ -126,19 +133,23 @@ That's the **default** until the first deploy — `IGNITION_DEV_IMAGE` / `IGNITI
 so compose falls back to the base Ignition image. Run `deploy.yml` (push to `main`) / `release.yml`
 (tag on `main`), or locally `scripts/build-image.sh && scripts/deploy-image.sh dev cicd-lab-05-ignition:local`.
 
-## The self-hosted runner is offline / jobs queue forever
+## The workflow finished but nothing deployed
 
-- Container up? `docker compose ps github-runner` and `docker logs lab05-runner` (look for
-  *"Listening for Jobs"*).
-- `RUNNER_REPO_URL` must point at **your fork**; `RUNNER_GITHUB_PAT` must be a real `repo`-scoped PAT.
-  After editing `.env`: `docker compose restart github-runner`.
-- In your fork: *Settings → Actions → Runners* should list it online with `self-hosted, lab05`.
+Expected. This lab runs **no self-hosted runner**, so the workflows build and push images but never
+touch a gateway. Deploying is manual: open the workflow run's summary, copy the image name it
+printed, and point the gateway at it yourself:
 
-## The runner recreates the WRONG containers (a duplicate stack appears)
+```bash
+docker pull ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:sha-<short>
+IGNITION_DEV_IMAGE=ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:sha-<short> \
+  docker compose up -d ignition-dev
+```
 
-The deploy job runs `docker compose up -d ignition-dev` from the runner's checkout. If a parallel set
-of containers shows up, the Compose **project name** didn't match. This lab pins it with `name: cicd-lab05`
-at the top of `docker-compose.yaml` — confirm that line is present and unchanged.
+## A duplicate stack appears when running compose
+
+If a parallel set of containers shows up, the Compose **project name** didn't match. This lab pins it
+with `name: cicd-lab05` at the top of `docker-compose.yaml` — confirm that line is present and
+unchanged.
 
 ## `git status` shows lots of `resource.json` changes
 

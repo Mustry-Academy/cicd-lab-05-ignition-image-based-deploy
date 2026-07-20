@@ -79,7 +79,7 @@ docker history cicd-lab-05-ignition:local   # see the baked layers, newest on to
 Now run the image **with no bind mounts** on a spare port — this is the proof that the image carries everything:
 
 ```bash
-docker run --rm --user root -p 9088:8088 \
+docker run --rm -p 9088:8088 \
   -e ACCEPT_IGNITION_EULA=Y \
   -e IGNITION_EDITION=standard \
   -e GATEWAY_ADMIN_USERNAME=admin \
@@ -92,7 +92,7 @@ docker run --rm --user root -p 9088:8088 \
 
 No `./projects` mount, no scan call — the project showed up because it's *inside the image*. Ctrl-C to stop (the `--rm` cleans it up).
 
-> **Why `--user root`?** The files we baked are owned by root (that's how the build context copies them), and the gateway needs to create runtime dirs *under* `config/` on boot. The lab's `docker-compose.yaml` runs every gateway as `user: root` for the same reason. Drop `--user root` here and the gateway FAULTs with `unable to create resource dir … /.resources` — a good reminder that **file ownership is part of what you bake into an image**. The `IGNITION_EDITION` + `GATEWAY_ADMIN_USERNAME` vars let it auto-commission instead of waiting on the setup wizard.
+> **Why no `--user` flag?** The Dockerfile copies everything with `--chown=2003:0`, which is the image's own `ignition` user. Ownership is part of what you bake into an image: a plain `COPY` would make the baked files root-owned, and the gateway (which does not run as root) would FAULT on boot with `unable to create resource dir … /.resources` because it cannot create its runtime dirs under `config/`. Getting the ownership right at build time is why the container needs no special privileges at run time. The `IGNITION_EDITION` + `GATEWAY_ADMIN_USERNAME` vars let it auto-commission instead of waiting on the setup wizard.
 
 ## We do (20 min)
 
@@ -267,25 +267,33 @@ gets its own immutable `:sha` tag — that tag is your rollback point in Part 2.
 
 Three directions, pick by appetite:
 
-1. **Run the real pipeline through GitHub Actions.** Everything you typed in part 2
-   is automated in this repo's workflows — GitHub flow: merge to `main` → dev, tag → prod.
-   Needs your fork + the bundled runner (also a great take-home):
-   1. In `.env`, point `RUNNER_REPO_URL` at **your fork** and set `RUNNER_GITHUB_PAT`
-      to the same `repo`-scope PAT you created in Lab 04 (make one at
-      github.com/settings/tokens if you skipped it), then `docker compose up -d github-runner`.
-      The runner appears under your fork's *Settings → Actions → Runners*.
-   2. Open a PR with a small project change — `ci.yml` validates it (including a no-push
-      image build). Merge to `main` → `deploy.yml` builds on a hosted runner, pushes to
-      **your** GHCR namespace, and your runner recreates dev (:8089).
+1. **Let GitHub build the image for you.** In part 2 you built locally and deployed
+   by hand. The workflows in this repo move the **build** half to CI — GitHub flow:
+   merge to `main` → an image is built and pushed, tag → that image is promoted.
+   The deploy half stays manual, exactly like you did it. Needs your fork
+   (also a great take-home):
+   1. Open a PR with a small project change — `ci.yml` validates it (including a
+      no-push image build). Merge to `main` → `deploy.yml` builds on a free
+      GitHub-hosted runner and pushes to **your** GHCR namespace.
+   2. Open the run's summary page. It prints the image name it just built. Pull it
+      and point dev at it — the same two commands you used all through part 2, only
+      the image name is longer:
+      ```bash
+      docker pull ghcr.io/<your-user>/cicd-lab-05-ignition:sha-<short>
+      IGNITION_DEV_IMAGE=ghcr.io/<your-user>/cicd-lab-05-ignition:sha-<short> \
+        docker compose up -d ignition-dev
+      ```
    3. `git tag v0.1.0 && git push origin v0.1.0` → `release.yml` re-tags `:dev` to
-      `:v0.1.0` + `:prod` — **no rebuild** — and recreates prod (:8090).
+      `:v0.1.0` + `:prod` — **no rebuild**. Deploy it to prod (:8090) the same way,
+      with `IGNITION_PROD_IMAGE`.
    4. The payoff — prove dev and prod run the **same digest**:
       ```bash
       docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-dev
       docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-prod
       ```
-      Then roll prod back with one click: *Actions → Release → Run workflow*, entering an
-      earlier version.
+   5. **Observe what's still manual:** you typed the image name twice. That last
+      mile — a machine that owns the gateway, picking up the tag on its own — is
+      what Lab 06 and Lab 07 automate.
 
 2. **Go deeper on the image:** shrink the build context with
    `--progress=plain`, do layer forensics with `docker history --no-trunc`, or
