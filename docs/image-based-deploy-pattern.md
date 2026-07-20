@@ -37,9 +37,9 @@ tag v0.1.0 (on main) ─▶ promote ───────┘ re-tag :test ──
 `release.yml` does **not** rebuild on a tag. It runs `docker buildx imagetools create` to copy the manifest of the already-tested **`:test`** image (the one test is running) onto new tags (`:v0.1.0`, `:production`). Server-side, no layers moved. (Why `:test` and not a rebuild from the tagged commit? A rebuild could pull a newer base layer and ship bytes test never ran — we promote *what test validated*.) Prove it:
 
 ```bash
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-test
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-production
-# the sha256:… digests are identical — production runs the bytes the test gateway tested
+docker inspect -f '{{.Image}}' lab05-ignition-test
+docker inspect -f '{{.Image}}' lab05-ignition-production
+# the sha256:… image IDs are identical — production runs the bytes the test gateway tested
 ```
 
 If you rebuilt for production instead, a base-image update, a dependency, or a clock-dependent layer could differ — and you'd be shipping something test never saw.

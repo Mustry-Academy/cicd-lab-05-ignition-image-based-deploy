@@ -79,18 +79,19 @@ docker history cicd-lab-05-ignition:local   # see the baked layers, newest on to
 Now run the image **with no bind mounts** on a spare port — this is the proof that the image carries everything:
 
 ```bash
-docker run --rm -p 9088:8088 \
+docker run -d --rm --name demo -p 9088:8088 \
   -e ACCEPT_IGNITION_EULA=Y \
   -e IGNITION_EDITION=standard \
   -e GATEWAY_ADMIN_USERNAME=admin \
   -e GATEWAY_ADMIN_PASSWORD=password \
   cicd-lab-05-ignition:local \
   -n demo -- -Dignition.allowunsignedmodules=true
+docker logs -f demo
 # wait ~30–60s for "Starting project: example-project" in the log,
 # then open http://localhost:9088 → the example-project is there
 ```
 
-No `./projects` mount, no scan call — the project showed up because it's *inside the image*. Ctrl-C to stop (the `--rm` cleans it up).
+No `./projects` mount, no scan call — the project showed up because it's *inside the image*. The `-d` runs it detached, so Ctrl-C only leaves the logs; stop the gateway with `docker stop demo` (the `--rm` cleans it up).
 
 > **Why no `--user` flag?** The Dockerfile copies everything with `--chown=2003:0`, which is the image's own `ignition` user. Ownership is part of what you bake into an image: a plain `COPY` would make the baked files root-owned, and the gateway (which does not run as root) would FAULT on boot with `unable to create resource dir … /.resources` because it cannot create its runtime dirs under `config/`. Getting the ownership right at build time is why the container needs no special privileges at run time. The `IGNITION_EDITION` + `GATEWAY_ADMIN_USERNAME` vars let it auto-commission instead of waiting on the setup wizard.
 
@@ -274,7 +275,9 @@ Three directions, pick by appetite:
    (also a great take-home):
    1. Open a PR with a small project change — `ci.yml` validates it (including a
       no-push image build). Merge to `main` → `deploy.yml` builds on a free
-      GitHub-hosted runner and pushes to **your** GHCR namespace.
+      GitHub-hosted runner and pushes to **your** GHCR namespace. Wait for that
+      run to go green before the next step — there is no image to pull until
+      `deploy.yml` has finished.
    2. Open the run's summary page. It prints the image name it just built. Pull it
       and point test at it — the same two commands you used all through part 2, only
       the image name is longer:
@@ -286,10 +289,12 @@ Three directions, pick by appetite:
    3. `git tag v0.1.0 && git push origin v0.1.0` → `release.yml` re-tags `:test` to
       `:v0.1.0` + `:production` — **no rebuild**. Deploy it to production (:8090) the same way,
       with `IGNITION_PRODUCTION_IMAGE`.
-   4. The payoff — prove test and production run the **same digest**:
+   4. The payoff — prove test and production run the **same image bytes**
+      (`{{.Image}}` is the sha256 of the image a container runs):
       ```bash
-      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-test
-      docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-production
+      docker inspect -f '{{.Image}}' lab05-ignition-test
+      docker inspect -f '{{.Image}}' lab05-ignition-production
+      # identical sha256 → production runs the bytes the test gateway tested
       ```
    5. **Observe what's still manual:** you typed the image name twice. That last
       mile — a machine that owns the gateway, picking up the tag on its own — is

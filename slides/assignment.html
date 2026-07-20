@@ -327,22 +327,29 @@ rm third-party-modules/dummy.txt</pre></div>
     <div class="sechead"><span class="num warm">WE DO · 2</span><div><div class="title">Run the image with nothing mounted, and read what got baked</div><div class="lead">The self-contained proof: the project shows up because it's <b>inside the image</b>, with no <span class="inlinecode">./projects</span> mount and no scan call.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">Run the image on a spare port with <b>no bind mounts</b> (see command). A gateway boot takes ~30 to 60 s — start it now, let it run, and carry on with the next steps while it comes up.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx">Once the log prints <i>"Starting project: example-project"</i>, open <span class="inlinecode">http://localhost:9088</span> → <b>example-project is there.</b> Ctrl-C stops it; <span class="inlinecode">--rm</span> cleans up.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx">Run the image on a spare port with <b>no bind mounts</b>, detached (<span class="inlinecode">-d</span>) so your terminal stays free. A gateway boot takes ~30 to 60 s — start it now and carry on with the next steps while it comes up.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx">Follow the boot with <span class="inlinecode">docker logs -f demo</span>. Once it prints <i>"Starting project: example-project"</i>, open <span class="inlinecode">http://localhost:9088</span> → <b>example-project is there.</b> Ctrl-C only leaves the logs; when you're done, <span class="inlinecode">docker stop demo</span> stops it and <span class="inlinecode">--rm</span> cleans up.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx">Meanwhile: see what <span class="inlinecode">.dockerignore</span> kept out. Your build output already measured it: the <span class="inlinecode">transferring context: ~60 MB</span> line, versus <span class="inlinecode">du -sh .</span> ≈ 130 MB on disk. The gap — mostly <span class="inlinecode">.git</span> — never reached Docker.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx">Explore what actually got baked: <b>read the image, not the repo</b>. Open the image in Docker Desktop (<i>Images → cicd-lab-05-ignition → Files</i>) — or whatever image browser you prefer — and find all four <span class="inlinecode">COPY</span>ed artifacts. Three live under <span class="inlinecode">/usr/local/bin/ignition/data/</span>: <span class="inlinecode">projects/</span>, <span class="inlinecode">config/</span> and <span class="inlinecode">modules.json</span>; the fourth is <span class="inlinecode">/third-party-modules</span> at the root. Note what's <b>not</b> there: <span class="inlinecode">README.md</span>, <span class="inlinecode">docs/</span>, <span class="inlinecode">.env</span>.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># step 1: the self-contained proof</span>
-docker run --rm -p 9088:8088 \
+        <div class="code"><pre><span class="cm"># step 1: the self-contained proof (-d = detached)</span>
+docker run -d --rm --name demo -p 9088:8088 \
   -e ACCEPT_IGNITION_EULA=Y -e IGNITION_EDITION=standard \
   -e GATEWAY_ADMIN_USERNAME=admin \
   -e GATEWAY_ADMIN_PASSWORD=password \
   cicd-lab-05-ignition:local \
   -n demo -- -Dignition.allowunsignedmodules=true
 
+<span class="cm"># step 2: follow the boot (Ctrl-C leaves the logs,
+#         the gateway keeps running)</span>
+docker logs -f demo
+
 <span class="cm"># step 3: check .git folder size</span>
-du -sh .git</pre></div>
+du -sh .git
+
+<span class="cm"># done exploring? stop it (--rm removes it)</span>
+docker stop demo</pre></div>
       </div>
     </div>
   </div>
@@ -375,7 +382,7 @@ du -sh .git</pre></div>
     <div class="stage">Part 2 · read first</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">2 · READ FIRST</span><div><div class="title">Why we deploy locally today, and what GitHub Actions would do instead</div><div class="lead">In a real setup this part is automated by <b>the same Actions you built in Lab 04</b>. Today you type the workflow's commands yourself.</div></div></div>
+    <div class="sechead"><span class="num phase2">2 · READ FIRST</span><div><div class="title">Why we deploy locally today, and what GitHub Actions would do instead</div><div class="lead"><b>Nothing to type on this slide</b> — it only explains the plan. In a real setup this part is automated by <b>the same Actions you built in Lab 04</b>; today you type the workflow's commands yourself, starting on the next slide (Part 2.1).</div></div></div>
     <div class="cols2">
       <ul class="checks">
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Same triggers as Lab 04.</b> A merge to <span class="inlinecode">main</span> would fire <span class="inlinecode">deploy.yml</span>, a tag would fire <span class="inlinecode">release.yml</span>. Only the steps <b>inside</b> the jobs change: build + push + pull + recreate, instead of copy + scan.</span></li>
@@ -383,18 +390,19 @@ du -sh .git</pre></div>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>So today, you are the pipeline.</b> Every command in Parts 2.1 to 2.3 is a line the workflow would run. Type them once by hand and the automation never feels like magic again.</span></li>
       </ul>
       <div>
-        <div class="code"><pre><span class="cm"># what a deploy job would run
-# (on a machine that owns the gateway):</span>
+        <div class="code"><pre><span class="cm"># FOR REFERENCE ONLY — do NOT run this. It's what
+# a CI deploy job would run, pulling from a registry:</span>
 docker pull ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt;
 IGNITION_TEST_IMAGE=ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt; \
   docker compose up -d ignition-test
 
-<span class="cm"># what YOU run today (no registry, so no pull):</span>
+<span class="cm"># YOUR deploy, in Part 2.1 (next slide) — local
+# image, no registry, so no pull:</span>
 IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
   docker compose up -d ignition-test</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Same deploy</span>
-          <p>The only line missing locally is <span class="inlinecode">docker pull</span>: your image store already holds the build. Everything else is <b>identical</b> to what the workflow runs. Want to run the real thing? The <b>stretch slide at the end</b> walks the full CI path.</p>
+          <p>Your version drops only the <span class="inlinecode">docker pull</span> line: your image store already holds the build. Everything else is <b>identical</b> to what the workflow runs. Want to run the real thing, registry included? That's the <b>stretch slide at the end</b> — not now.</p>
         </div>
       </div>
     </div>
@@ -561,27 +569,28 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-test</pre></div>
     <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Let GitHub build the image, then deploy it by hand</div><div class="lead">In part 2 you built locally and deployed by hand. This moves the <b>build</b> half to CI — merge to <span class="inlinecode">main</span> builds and pushes, a <span class="inlinecode">v*</span> tag promotes. The deploy half stays yours. Needs your fork; a good take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx"><b>Build via CI:</b> open a PR with a small project change and watch <span class="inlinecode">ci.yml</span> validate it (including a no-push image build). Merge to <span class="inlinecode">main</span> → <span class="inlinecode">deploy.yml</span> builds on a free hosted runner and pushes to <b>your</b> GHCR namespace.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx"><b>Deploy it yourself:</b> open the run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point test at it. Same two commands as part 2; only the image name got longer.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to production:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:test</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:production</span> — <b>no rebuild</b>. Deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PRODUCTION_IMAGE</span>.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx"><b>Notice what stayed manual:</b> you typed an image name twice. That last mile — a machine next to the gateway, picking the tag up on its own — is exactly what Labs 06 and 07 automate.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx"><b>First, trigger <span class="inlinecode">deploy.yml</span>:</b> open a PR with a small project change (<span class="inlinecode">ci.yml</span> validates it, including a no-push image build) and <b>merge it to <span class="inlinecode">main</span></b>. The merge fires <span class="inlinecode">deploy.yml</span>, which builds on a free hosted runner and pushes to <b>your</b> GHCR namespace. <b>Wait until that run is green</b> — there is no image to pull before it finishes.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Then deploy it yourself:</b> open the deploy run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point test at it. Same two commands as part 2; only the image name got longer.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to production:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:test</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:production</span> — <b>no rebuild</b>. When that run is green, deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PRODUCTION_IMAGE</span>.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><b>The payoff:</b> inspect both containers like you did all lab — but with <span class="inlinecode">{{.Image}}</span>, the sha256 of the image the container runs. Identical on test and production → production runs the exact bytes test validated. And notice what stayed manual: you typed an image name twice. That last mile is what Labs 06 and 07 automate.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: PR → merge to main → watch Actions build</span>
+        <div class="code"><pre><span class="cm"># 1: PR → merge to main → deploy.yml builds + pushes
+#    (Actions tab: wait for the green check)</span>
 
 <span class="cm"># 2: copy the tag from the run summary, deploy it</span>
 docker pull ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt;
 IGNITION_TEST_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt; \
   docker compose up -d ignition-test
 
-<span class="cm"># 3: release (promote, no rebuild)</span>
+<span class="cm"># 3: release (promote, no rebuild), then deploy to :8090</span>
 git tag v0.1.0 &amp;&amp; git push origin v0.1.0
+IGNITION_PRODUCTION_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:v0.1.0 \
+  docker compose up -d ignition-production
 
 <span class="cm"># 4: the digest-equality proof</span>
-docker inspect -f '{{ index .RepoDigests 0 }}' \
-  lab05-ignition-test
-docker inspect -f '{{ index .RepoDigests 0 }}' \
-  lab05-ignition-production
+docker inspect -f '{{.Image}}' lab05-ignition-test
+docker inspect -f '{{.Image}}' lab05-ignition-production
 <span class="cm"># identical sha256 → production runs the bytes the test gateway tested</span></pre></div>
         <div class="goal good-g" style="margin-top:18px">
           <span class="badge">Build-once, promote-many</span>

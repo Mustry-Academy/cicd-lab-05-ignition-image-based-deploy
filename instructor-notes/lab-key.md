@@ -128,13 +128,13 @@ This lab is **GitHub flow**: a merge to `main` → test gateway, a `vX.Y.Z` tag 
 This is the money moment. After a release:
 
 ```bash
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-test
-docker inspect -f '{{ index .RepoDigests 0 }}' lab05-ignition-production
+docker inspect -f '{{.Image}}' lab05-ignition-test
+docker inspect -f '{{.Image}}' lab05-ignition-production
 ```
 
 Same `sha256:…`. If a participant shrugs, ask: *"What would it take for these to differ, and why would that scare you?"* Answer: a rebuild for production could pull a newer base layer or a non-deterministic dependency — production would run something the test gateway never tested. Build-once/promote-many makes that impossible by construction.
 
-> If `.RepoDigests` is empty for a locally-built image (no registry digest yet), use the CI-deployed images, or compare `docker inspect -f '{{.Image}}'` (the local image ID) instead.
+> Why `{{.Image}}` and not `{{ index .RepoDigests 0 }}`? `.RepoDigests` only exists on **image** objects — running it against a container name errors out. `.Image` on a **container** is the sha256 ID of the image it runs, which is exactly the equality we want, and it also works for locally-built images that have no registry digest.
 
 ## Rollback
 
