@@ -272,9 +272,10 @@ Three directions, pick by appetite:
    by hand. The workflows in this repo move the **build** half to CI — GitHub flow:
    merge to `main` → an image is built and pushed, tag → that image is promoted.
    The deploy half stays manual, exactly like you did it. Needs your fork
-   with Actions enabled — and if you drive PRs with `gh`, run
-   `gh repo set-default <you>/cicd-lab-05-ignition-image-based-deploy` once in
-   this clone first, same as Labs 03/04 (also a great take-home):
+   with Actions enabled, and `gh` pointed at your fork:
+   `gh repo set-default <you>/cicd-lab-05-ignition-image-based-deploy` — you
+   already ran this in the assignment setup; it's stored per clone, same as
+   Labs 03/04 (also a great take-home):
    1. Open a PR with a small project change — `ci.yml` validates it (including a
       no-push image build). Merge to `main` → `deploy.yml` builds on a free
       GitHub-hosted runner and pushes to **your** GHCR namespace. Wait for that
