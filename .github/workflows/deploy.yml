@@ -47,15 +47,12 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  # Re-run the full CI suite (ci.yml as a reusable workflow) before anything
-  # is built and pushed. PRs already ran it, but this also covers direct
-  # pushes to main — the build job below only starts if validation is green.
-  validate:
-    uses: ./.github/workflows/ci.yml
-
+  # No validation job here: ci.yml already ran on the PR that put this commit
+  # on main — that PR run is the gate, so re-running it before every build
+  # would validate the same commit twice. The trade-off: a direct push to
+  # main skips validation, which is why main only moves via PRs.
   build:
     name: Build and push image
-    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -318,15 +318,15 @@ initial_scan() {
     if is_placeholder_api_key; then
         echo -e "${YELLOW}No API key in .env yet — skipping initial scan.${NC}"
         echo "  scripts/generate-api-keys.sh should have created one; run it, then:"
-        echo "    scripts/trigger-scan.sh both --gateway local"
+        echo "    scripts/trigger-scan.sh local"
         return 0
     fi
 
     echo -e "${GREEN}Triggering initial scan on local gateway...${NC}"
-    if ! "$SCRIPT_DIR/trigger-scan.sh" both --gateway local; then
+    if ! "$SCRIPT_DIR/trigger-scan.sh" local; then
         echo ""
         echo -e "${YELLOW}Initial scan failed (likely the key lacks scan permission).${NC}"
-        echo "  Fix the role for the API key, then run:  scripts/trigger-scan.sh both --gateway local"
+        echo "  Fix the role for the API key, then run:  scripts/trigger-scan.sh local"
     fi
 }
 
@@ -359,14 +359,15 @@ echo ""
 echo "API keys (unique to this clone, generated into .env — never committed,"
 echo "never baked into an image):"
 echo "  IGNITION_API_KEY_LOCAL / _TEST / _PRODUCTION — one per gateway;"
-echo "  scripts/trigger-scan.sh picks the right one via --gateway. Deploys to"
+echo "  scripts/trigger-scan.sh picks the right one from its argument"
+echo "  (local | test | production). Deploys to"
 echo "  test/production reinstall that gateway's token into the fresh container"
 echo "  automatically (scripts/install-api-token.sh)."
 echo 
 echo "Useful commands:"
 echo "  docker compose ps                              # check container state"
 echo "  docker logs -f lab05-ignition-local            # tail local gateway logs"
-echo "  scripts/trigger-scan.sh both                   # rescan local (file-based loop)"
+echo "  scripts/trigger-scan.sh                        # rescan local (file-based loop)"
 echo "  scripts/build-image.sh                         # build the gateway image"
 echo "  scripts/deploy-image.sh test <image>            # recreate test from an image"
 echo "  scripts/teardown.sh                            # stop the stack"

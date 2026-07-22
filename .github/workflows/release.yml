@@ -48,15 +48,12 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  # Same gate as deploy.yml: the tagged commit must pass the full CI suite
-  # before its image is promoted to production. Tags never go through a PR, so
-  # without this a bad tag would promote unvalidated.
-  validate:
-    uses: ./.github/workflows/ci.yml
-
+  # No validation job here: you tag a commit that is already on main, and it
+  # passed ci.yml on the PR that merged it (and deploy.yml built its image).
+  # The tag chooses which validated, already-built image is promoted; only
+  # tag commits that came through a PR.
   promote:
     name: Promote tested image to production tag
-    needs: validate
     runs-on: ubuntu-latest
     steps:
       # No checkout needed — the promote job only re-tags images in the registry.

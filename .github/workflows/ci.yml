@@ -1,5 +1,6 @@
-# Validation — runs on every pull request into main, AND as the gate job
-# inside deploy.yml / release.yml (via workflow_call).
+# Validation — runs on every pull request into main. That PR run is THE gate:
+# once a commit merges, deploy.yml (push to main) and release.yml (tag) ship
+# it without re-validating — the same commit already passed here.
 #
 # GitHub flow has a single long-lived branch:
 #   main  ← feature/* branches merge here via PR (then deploy.yml ships to test,
@@ -21,10 +22,6 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  # Lets deploy.yml and release.yml reuse this whole workflow as their first
-  # job, so nothing is built or promoted without passing the exact same checks
-  # a PR gets — including direct pushes to main, which never see a PR.
-  workflow_call:
 
 # Cancel any in-flight CI run for this PR when a new commit lands.
 concurrency:
@@ -128,8 +125,8 @@ jobs:
       - name: Build image (smoke test, no push)
         # Prove the Dockerfile builds against the real project/config/modules.
         # We do NOT push here — pushing happens in deploy.yml after merge.
-        # On a PR the head SHA is baked in; when reused via workflow_call
-        # (the deploy/release gate) there is no PR, so fall back to github.sha.
+        # On a PR the head SHA is baked in; github.sha is the fallback for
+        # other event types.
         uses: docker/build-push-action@v6
         with:
           context: .
